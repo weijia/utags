@@ -189,8 +189,15 @@ let matchedNodesSelector = joinSelectors(
     : [...defaultSite.matchedNodesSelectors, 'a[href]']
 )
 
+let scannerInstance: UTagsScanner | undefined
+let lastScanDomOptions: ScanDomOptions | undefined
+
+export function isScannerBusy() {
+  return Boolean(scannerInstance?.isScanning || scannerInstance?.isCleaning)
+}
+
 export const updateMatchedNodesSelector = (customSelector: string) => {
-  matchedNodesSelector = joinSelectors(
+  const nextMatchedNodesSelector = joinSelectors(
     currentSite.matchedNodesSelectors &&
       currentSite.matchedNodesSelectors.length > 0
       ? [
@@ -200,6 +207,15 @@ export const updateMatchedNodesSelector = (customSelector: string) => {
         ]
       : [...defaultSite.matchedNodesSelectors, 'a[href]', customSelector]
   )
+
+  if (nextMatchedNodesSelector === matchedNodesSelector) {
+    return
+  }
+
+  matchedNodesSelector = nextMatchedNodesSelector
+  if (scannerInstance) {
+    scannerInstance.updateConfig(createUTagsScannerOptions(lastScanDomOptions))
+  }
 }
 
 const excludeSelector = joinSelectors([
@@ -453,7 +469,7 @@ const addMatchedNodes = (matchedNodesSet: Set<UtagsHTMLElement>) => {
 
 export function matchedNodes() {
   // console.time('matchedNodes')
-  const matchedNodesSet = new Set<UtagsHTMLElement>()
+  // const matchedNodesSet = new Set<UtagsHTMLElement>()
 
   // try {
   //   addMatchedNodes(matchedNodesSet)
@@ -461,28 +477,28 @@ export function matchedNodes() {
   //   console.error(error)
   // }
 
-  try {
-    const currentPageLink = $('#utags_current_page_link') as UtagsHTMLElement
-    if (currentPageLink) {
-      const key = getCanonicalUrl(currentPageLink.href)
-      if (key) {
-        const title = getTrimmedTitle(currentPageLink)
-        const description = currentPageLink.dataset.utags_description
-        // Build meta object only with properties that have values
-        const meta: { title?: string; description?: string } = {}
-        if (title) meta.title = title
-        if (description) meta.description = description
+  // try {
+  //   const currentPageLink = $('#utags_current_page_link') as UtagsHTMLElement
+  //   if (currentPageLink) {
+  //     const key = getCanonicalUrl(currentPageLink.href)
+  //     if (key) {
+  //       const title = getTrimmedTitle(currentPageLink)
+  //       const description = currentPageLink.dataset.utags_description
+  //       // Build meta object only with properties that have values
+  //       const meta: { title?: string; description?: string } = {}
+  //       if (title) meta.title = title
+  //       if (description) meta.description = description
 
-        setElementUtags(currentPageLink, {
-          key,
-          meta,
-        })
-        matchedNodesSet.add(currentPageLink)
-      }
-    }
-  } catch (error) {
-    console.error(error)
-  }
+  //       setElementUtags(currentPageLink, {
+  //         key,
+  //         meta,
+  //       })
+  //       matchedNodesSet.add(currentPageLink)
+  //     }
+  //   }
+  // } catch (error) {
+  //   console.error(error)
+  // }
 
   // 添加 data-utags_primary_link 属性强制允许使用 utags
   // const array = $$("[data-utags_primary_link]") as HTMLAnchorElement[]
@@ -538,7 +554,7 @@ export function matchedNodes() {
   // }
 
   // console.timeEnd('matchedNodes')
-  return [...matchedNodesSet]
+  return []
 }
 
 export type ScanDomOptions = {
@@ -546,9 +562,10 @@ export type ScanDomOptions = {
   onScanCompleted?: (nodes: HTMLElement[]) => void
 }
 
-export function scanDom(options?: ScanDomOptions) {
-  console.debug('UTagsScanner start', matchedNodesSelector, excludeSelector)
-  const initialOptions: UTagsScannerOptions = {
+function createUTagsScannerOptions(
+  options?: ScanDomOptions
+): UTagsScannerOptions {
+  return {
     include: matchedNodesSelector
       ? matchedNodesSelector.split(',')
       : // : ['[data-utags_link]', '[data-utags]', 'a[href*="github"]', 'a'],
@@ -578,7 +595,8 @@ export function scanDom(options?: ScanDomOptions) {
         if (
           !href ||
           typeof href !== 'string' ||
-          !validateFunction(element, href)
+          (!validateFunction(element, href) &&
+            !element.closest('#utags_current_page_link'))
         ) {
           // It's not a candidate
           cleanupUtags(element)
@@ -637,6 +655,12 @@ export function scanDom(options?: ScanDomOptions) {
       }
     },
   }
+}
+
+export function scanDom(options?: ScanDomOptions) {
+  lastScanDomOptions = options
+  console.debug('UTagsScanner start', matchedNodesSelector, excludeSelector)
+  const initialOptions = createUTagsScannerOptions(options)
 
   let debugTimeout: ReturnType<typeof setTimeout>
   let currentResult: Element[] | undefined
@@ -663,6 +687,7 @@ export function scanDom(options?: ScanDomOptions) {
       }, 100)
     }
   }, initialOptions)
+  scannerInstance = scanner
 
   if (document.body) {
     scanner.start(document.body)

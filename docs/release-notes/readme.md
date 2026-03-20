@@ -1,8 +1,17 @@
 # RELEASE NOTES
 
+## v0.32
+
+- Add a scan watchdog to detect suspected infinite scan loops and stop scanning safely.
+- Skip scanning disconnected nodes and disconnected ShadowRoots to avoid wasted work and stale matches.
+- Trigger a fallback cleanup pass when target removals are detected to keep results accurate.
+- Defer scanned-node queue processing while the scanner is busy to prioritize scanning in idle time.
+- Improve scan target filtering by excluding nodes under non-scannable ancestor tags.
+
 ## v0.31
 
 - Introduce `UTagsScanner` to traverse the whole page (including Shadow DOM), discover elements with `utags` data, and inject UTags UI.
+- Avoid forcing `attachShadow({ mode: 'closed' })` to `open` on Cloudflare Challenges pages to prevent breaking the challenge flow.
 - Add incremental scanning via `MutationObserver` to keep tags in sync on dynamic pages while avoiding self-trigger loops by restricting observed attributes.
 - Improve cleanup and registry handling to prevent leaked/cloned UTags UI nodes when targets are removed or excluded.
 - Apply utags to misskon.com

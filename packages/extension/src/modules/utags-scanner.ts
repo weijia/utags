@@ -19,6 +19,7 @@ const BUSINESS_ATTRIBUTES = [
 const MATCH_ATTR = 'data-utags-matched'
 
 const DEBUG = true
+const MAX_SCAN_DURATION = 8000
 
 export type UTagsScannerStats = {
   lastScanDuration: number // 从任务开始到结束的总挂钟时间
@@ -74,6 +75,7 @@ export class UTagsScanner {
   incrementalStack: ScanTask[]
   isScanning: boolean
   isCleaning: boolean
+  isStoppedDueToLoop = false
   scannedShadowRoots: WeakSet<ShadowRoot>
   observer: MutationObserver
   stats: UTagsScannerStats
@@ -138,6 +140,39 @@ export class UTagsScanner {
     )
   }
 
+  stopDueToLoop(reason: string) {
+    if (this.isStoppedDueToLoop) return
+    this.isStoppedDueToLoop = true
+    this.isScanning = false
+    this.isCleaning = false
+    this.initialStack = []
+    this.incrementalStack = []
+    try {
+      this.observer.disconnect()
+    } catch (error) {
+      console.error(error)
+    }
+
+    const elapsed = this.startTime ? performance.now() - this.startTime : 0
+    console.error('[UTagsScanner] stopped due to a suspected scan loop', {
+      reason,
+      elapsedMs: elapsed,
+      loopCount: this.loopCount,
+      totalNodesProcessed: this.stats.totalNodesProcessed,
+    })
+  }
+
+  callOnBeforeMatch(node: Element, action: 'add' | 'delete') {
+    if (!this.onBeforeMatch) return action === 'add' ? true : undefined
+
+    try {
+      return this.onBeforeMatch(node, action)
+    } catch (error) {
+      console.error(error)
+      return action === 'add' ? false : undefined
+    }
+  }
+
   /**
    * 检查节点是否是 root 的后代（穿透 Shadow DOM）
    */
@@ -185,9 +220,7 @@ export class UTagsScanner {
     if (shouldMatch) {
       // 判定：回调函数是否有额外否定意见
       // 即使已经匹配，也再次检查，因为属性可能变化导致不再满足 onBeforeMatch 的条件
-      finalDecision = this.onBeforeMatch
-        ? this.onBeforeMatch(node, 'add') !== false
-        : true
+      finalDecision = this.callOnBeforeMatch(node, 'add') !== false
     }
 
     if (finalDecision) {
@@ -205,7 +238,7 @@ export class UTagsScanner {
         // Cloned utags target element
         node.hasAttribute('data-utags_id')
       ) {
-        if (this.onBeforeMatch) this.onBeforeMatch(node, 'delete')
+        this.callOnBeforeMatch(node, 'delete')
         node.removeAttribute(MATCH_ATTR)
       }
 
@@ -303,6 +336,7 @@ export class UTagsScanner {
   }
 
   handleMutations(mutations: MutationRecord[]) {
+    if (this.isStoppedDueToLoop) return
     let needsUpdate = false
     let hasRemoval = false
 
@@ -328,7 +362,7 @@ export class UTagsScanner {
           if (n instanceof HTMLElement) {
             if (n.classList.contains('utags_ul')) {
               // Check if node is cloned utags_ul node
-              if (this.onBeforeMatch) this.onBeforeMatch(n, 'delete')
+              this.callOnBeforeMatch(n, 'delete')
             }
             // 忽略一些特殊节点：例如 utags_ul, iframe, svg, path 等非 HTMLElement 类型的节点
             else if (isScanTarget(n)) {
@@ -352,7 +386,8 @@ export class UTagsScanner {
       }
     }
 
-    if (needsUpdate || hasRemoval) {
+    // eslint-disable-next-line n/prefer-global/process
+    if (process.env.PLASMO_TAG !== 'prod' && (needsUpdate || hasRemoval)) {
       console.log('[sanner] handleMutations', mutations)
     }
 
@@ -438,6 +473,7 @@ export class UTagsScanner {
     scanChildren = true,
     isInitial = false
   ) {
+    if (this.isStoppedDueToLoop) return
     const task: ScanTask = { node, scanChildren, isInitial }
     if (isInitial) {
       this.initialStack.push(task)
@@ -456,18 +492,28 @@ export class UTagsScanner {
   }
 
   processStack(deadline: IdleDeadline) {
+    if (this.isStoppedDueToLoop) return
     const cycleStart = performance.now() // 记录当前空闲周期的真实开始时间
     let currentLoopNodesProcessed = 0
     let currentLoopNodesExcluded = 0
     this.loopCount++
 
+    const activeDurationMs = () =>
+      this.currentScanActiveTime + (performance.now() - cycleStart)
+
     console.log(
       'processStack [start]',
       this.loopCount,
       deadline.timeRemaining(),
+      activeDurationMs().toFixed(2),
       this.initialStack.length,
       this.incrementalStack.length
     )
+
+    if (activeDurationMs() > MAX_SCAN_DURATION) {
+      this.stopDueToLoop('processStack ran continuously for too long')
+      return
+    }
 
     while (deadline.timeRemaining() > 0) {
       let item: ScanTask | undefined
@@ -491,8 +537,16 @@ export class UTagsScanner {
       this.currentScanNodesProcessed++
       currentLoopNodesProcessed++
 
+      if (
+        currentLoopNodesProcessed % 10 === 0 &&
+        activeDurationMs() > MAX_SCAN_DURATION
+      ) {
+        this.stopDueToLoop('processStack ran continuously for too long')
+        return
+      }
+
       if (!(node instanceof Element)) {
-        if (node instanceof ShadowRoot) {
+        if (node instanceof ShadowRoot && node.isConnected) {
           // DEBUG && setDebugMark(node.host, 'scanned_shadowroot_host2')
           // 避免重复观察 ShadowRoot
           if (!this.scannedShadowRoots.has(node)) {
@@ -521,6 +575,11 @@ export class UTagsScanner {
           }
         }
 
+        continue
+      }
+
+      if (!node.isConnected) {
+        this._updateNodeStatus(node, false)
         continue
       }
 

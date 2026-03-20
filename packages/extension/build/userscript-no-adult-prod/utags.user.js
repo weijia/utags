@@ -16,7 +16,7 @@
 // @namespace            https://github.com/utags
 // @homepageURL          https://github.com/utags/utags#readme
 // @supportURL           https://github.com/utags/utags/issues
-// @version              0.31.4
+// @version              0.32.3
 // @description          Enhance your browsing experience by adding custom tags and notes to users, posts, and videos across the web. Perfect for organizing content, identifying users, and filtering out unwanted posts. Also functions as a modern bookmark management tool. Supports 100+ popular websites including X (Twitter), Reddit, Facebook, Threads, Instagram, YouTube, TikTok, GitHub, Hacker News, Greasy Fork, pixiv, Twitch, and many more.
 // @description:zh-CN    为网页上的用户、帖子、视频添加自定义标签和备注，让你的浏览体验更加个性化和高效。轻松识别用户、整理内容、过滤无关信息。同时也是一个现代化的书签管理工具。支持 100+ 热门网站，包括 V2EX、X (Twitter)、YouTube、TikTok、Reddit、GitHub、B站、抖音、小红书、知乎、掘金、豆瓣、吾爱破解、pixiv、LINUX DO、小众软件、NGA、BOSS直聘等。
 // @description:zh-HK    為網頁上的用戶、帖子、視頻添加自定義標籤和備註，讓你的瀏覽體驗更加個性化和高效。輕鬆識別用戶、整理內容、過濾無關信息。同時也是一個現代化的書籤管理工具。支持 100+ 熱門網站，包括 X (Twitter)、Reddit、Facebook、Instagram、YouTube、TikTok、GitHub、Hacker News、Greasy Fork、pixiv、Twitch 等。
@@ -36,6 +36,7 @@
 // @license              MIT
 // @match                https://*/*
 // @match                http://*/*
+// @exclude              *://challenges.cloudflare.com/*
 // @connect              dav.jianguoyun.com
 // @connect              localhost
 // @connect              *
@@ -55,8 +56,8 @@
 ////                  The Official Installation URLs                                                                                        ////
 ////                            官方安装网址                                                                                                  ////
 ////                                                                                                                                        ////
-//// * https://greasyfork.org/scripts/460718-utags-add-usertags-to-links                                                                    ////
-//// ** downloadURL https://update.greasyfork.org/scripts/460718/%F0%9F%8F%B7%EF%B8%8F%20UTags%20-%20Add%20usertags%20to%20links.user.js    ////
+//// * https://greasyfork.org/scripts/569761-utags-add-usertags-to-links                                                                    ////
+//// ** downloadURL https://update.greasyfork.org/scripts/569761/%F0%9F%8F%B7%EF%B8%8F%20UTags%20-%20Add%20usertags%20to%20links.user.js    ////
 //// * https://scriptcat.org/script-show-page/2784                                                                                          ////
 //// ** downloadURL https://scriptcat.org/scripts/code/2784/%F0%9F%8F%B7%EF%B8%8F+UTags+-+Add+usertags+to+links.user.js                     ////
 //// * https://github.com/utags/utags                                                                                                       ////
@@ -1171,7 +1172,7 @@
     }
     removeEventListener(doc, "click", onDocumentClick, true)
     removeEventListener(doc, "keydown", onDocumentKeyDown, true)
-    removeEventListener(win, "beforeShowSettings", onBeforeShowSettings, true)
+    removeEventListener(doc, "beforeShowSettings", onBeforeShowSettings, true)
   }
   function hideSettings() {
     var _a
@@ -1405,7 +1406,7 @@
                     if (textArea) {
                       await saveSettingsValue(key, textArea.value.trim())
                     }
-                  }, 100)
+                  }, 2e3)
                 },
               })
               break
@@ -1535,8 +1536,8 @@
     }
     closeModal()
     const event = new CustomEvent("beforeShowSettings")
-    win.dispatchEvent(event)
-    addEventListener(win, "beforeShowSettings", onBeforeShowSettings, true)
+    doc.dispatchEvent(event)
+    addEventListener(doc, "beforeShowSettings", onBeforeShowSettings, true)
     createSettingsElement()
     await updateOptions()
     addEventListener(doc, "click", onDocumentClick, true)
@@ -3927,7 +3928,11 @@
     }
   }
   var cleanupUtags = (element) => {
-    if (element.classList.contains("utags_ul") && !isUtagsUlTracked(element)) {
+    if (
+      element.classList.contains("utags_ul") &&
+      !isUtagsUlTracked(element) &&
+      !element.classList.contains("utags_current_tags")
+    ) {
       element.remove()
       return
     }
@@ -4948,11 +4953,15 @@
   var isProcessingEnabled = false
   var processNodeFn
   var onQueueEmptyFn
+  var shouldDeferProcessingFn
   function configureScannedNodeProcessor(fn) {
     processNodeFn = fn
   }
   function configureQueueEmptyCallback(fn) {
     onQueueEmptyFn = fn
+  }
+  function configureScannedNodeProcessingBlocker(fn) {
+    shouldDeferProcessingFn = fn
   }
   function setScannedNodeProcessingEnabled(enabled) {
     isProcessingEnabled = enabled
@@ -5002,6 +5011,10 @@
       isProcessingScannedNodeQueue = false
       return
     }
+    if (shouldDeferProcessingFn == null ? void 0 : shouldDeferProcessingFn()) {
+      requestIdleCallback(processScannedNodesIdle)
+      return
+    }
     while (deadline.timeRemaining() > 1 && hasScannedNodesInQueue()) {
       const node = takeScannedNodeFromQueue()
       if (!node) {
@@ -5033,13 +5046,31 @@
   var content_default =
     '#TOFIX_uFEFF{display:block}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul:not(.utags_ul)[data-utags_key],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ol:not(.utags_ul)[data-utags_key]{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity).utags_hide_all_tags:not(#utags_should_has_higher_specificity) .utags_ul,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity)[data-utags=off] .utags_ul{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container{position:absolute;top:-999px;height:0px;width:100%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul{z-index:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px;margin-top:0px !important;margin-left:0px !important;flex-wrap:nowrap !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul{box-sizing:border-box !important;display:inline-flex !important;flex-direction:row !important;flex-wrap:wrap !important;align-content:flex-start;justify-content:flex-start;overflow:visible;white-space:normal;list-style-type:none !important;margin:0 !important;padding:0 !important;vertical-align:text-bottom !important;line-height:normal !important;background-color:rgba(0,0,0,0);border:none !important;box-shadow:none !important;max-width:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li{box-sizing:border-box !important;display:inline-flex !important;align-items:center !important;float:none !important;overflow:visible;width:unset !important;height:unset !important;border:none !important;padding:0 !important;margin:0 !important;vertical-align:top !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:first-child .utags_text_tag{margin-left:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:last-child .utags_text_tag{margin-right:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::after{content:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag{box-sizing:border-box !important;display:block !important;border:var(--utags-text-tag-border-width) solid var(--utags-text-tag-border-color);color:var(--utags-text-tag-color) !important;border-radius:3px !important;padding:1px 3px !important;margin:0 1px !important;font-size:var(--utags-text-tag-font-size) !important;font-family:var(--utags-text-tag-font-family) !important;letter-spacing:0 !important;line-height:1 !important;height:unset !important;width:unset !important;font-weight:normal !important;text-decoration:none !important;text-transform:none !important;text-align:center !important;text-shadow:none !important;text-indent:0 !important;min-width:unset !important;min-height:unset !important;max-width:unset !important;max-height:unset !important;background:unset !important;background-color:var(--utags-text-tag-background-color) !important;cursor:pointer;z-index:0;pointer-events:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag:link,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag:link{cursor:pointer}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::before{content:attr(data-utags_tag);display:block;position:static;font-size:var(--utags-text-tag-font-size);line-height:1;height:unset;width:unset;max-width:var(--utags-text-tag-max-width);white-space:var(--utags-text-tag-white-space);overflow:hidden;text-overflow:ellipsis;border-radius:unset;border:unset;background:unset;margin:unset;padding:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::after,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::after{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]{height:var(--utags-visited-tag-size) !important;width:var(--utags-visited-tag-size) !important;border-radius:var(--utags-visited-tag-size) !important;--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);--utags-text-tag-border-width: 0px;margin-left:2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_emoji_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_emoji_tag{--utags-text-tag-background-color: var( --utags-emoji-tag-background-color );--utags-text-tag-font-size: var(--utags-emoji-tag-font-size);--utags-text-tag-font-family: var(--utags-emoji-tag-font-family);--utags-text-tag-border-width: var(--utags-emoji-tag-border-width);--utags-text-tag-border-color: var(--utags-emoji-tag-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606\u2606]{--utags-text-tag-background-color: var(--utags-star-tag-background-color);--utags-text-tag-font-size: var(--utags-star-tag-font-size);--utags-text-tag-font-family: var(--utags-star-tag-font-family);--utags-text-tag-border-width: var(--utags-star-tag-border-width);--utags-text-tag-border-color: var(--utags-star-tag-border-color);--utags-text-tag-color: var(--utags-star-tag-color);padding:0 2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2{width:var(--utags-captain-tag-size) !important;height:var(--utags-captain-tag-size) !important;padding:1px 0 0 1px !important;background:none !important;color:var(--utags-captain-tag-color) !important;border:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2::before{content:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 svg{fill:currentColor !important;vertical-align:-3px;margin:0 !important;padding:0 !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 *{color:inherit !important;fill:currentColor !important;width:unset;height:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag{opacity:1%;position:absolute;top:var(--utags-notag-captain-tag-top, 0);left:var(--utags-notag-captain-tag-left, 0);padding:0 !important;margin:0 !important;width:4px !important;height:4px !important;font-size:1px !important;background-color:var(--utags-captain-tag-background-color) !important;transition:all 0s .3s !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:focus{color:var(--utags-captain-tag-hover-color) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0{margin:0 !important;display:var(--utags-notag-ul-disply, inline) !important;float:var(--utags-notag-ul-float, none);height:var(--utags-notag-ul-height, unset);width:var(--utags-notag-ul-width, unset) !important;position:var(--utags-notag-ul-position, unset);top:var(--utags-notag-ul-top, unset)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0>li,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0>li{position:relative !important;height:var(--utags-captain-tag-size) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(.utags_ul):hover+.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_fit_content]:hover .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul:hover .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_active .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(a):not([data-utags_node_type=link]):not(.utags_ul)+.utags_ul .utags_captain_tag{opacity:100%;width:calc(var(--utags-captain-tag-size) + 8px) !important;height:calc(var(--utags-captain-tag-size) + 8px) !important;padding:5px 4px 4px 5px !important;transition:all 0s .1s !important;z-index:90}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_hide_all .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag{transition:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal{position:fixed;top:0;left:0;height:0;width:0;z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_wrapper{position:fixed;display:flex;align-items:flex-start;justify-content:center;width:100%;inset:0px;padding-top:5vh;background-color:hsla(0,0%,100%,.1);z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_content{box-sizing:border-box;display:flex;flex-direction:column;max-width:94%;max-height:100%;overflow:hidden;overflow:auto;color:#000;background-color:#fff !important;border-radius:5px;padding:14px;margin:0 auto;-webkit-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);-moz-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);box-shadow:0px 10px 39px 10px rgba(62,66,66,.22)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_title{display:block;color:#000;margin-bottom:10px;font-size:14px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper{display:flex;flex-direction:row;justify-content:end;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button{font-size:14px;height:32px;min-width:80px;font-weight:600;padding:0 8px;border-radius:2px;color:var(--utags-button-text-color);border:1px solid var(--utags-button-border-color);background-color:var(--utags-button-bg-color) !important;text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:hover{background-color:var(--utags-button-hover-bg-color);border-color:var(--utags-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:not(:first-child){margin-left:10px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button.utags_primary{--utags-button-text-color: var(--utags-action-button-text-color);--utags-button-bg-color: var(--utags-action-button-bg-color);--utags-button-border-color: var(--utags-action-button-border-color);--utags-button-hover-bg-color: var( --utags-action-button-hover-bg-color );--utags-button-hover-border-color: var( --utags-action-button-hover-border-color )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input{-webkit-appearance:none;background-color:var(--utags-button-hover-bg-color);border:none;border-bottom:2px solid var(--utags-button-hover-bg-color);border-radius:4px;box-sizing:border-box;caret-color:var(--cr-input-focus-color);color:var(--cr-input-color);font-family:var(--utags-text-tag-font-family) !important;font-weight:inherit;line-height:inherit;min-height:var(--cr-input-min-height, auto);outline:0;padding-bottom:var(--cr-input-padding-bottom, 6px);padding-inline-end:var(--cr-input-padding-end, 8px);padding-inline-start:var(--cr-input-padding-start, 8px);padding-top:var(--cr-input-padding-top, 6px);text-align:left;text-overflow:ellipsis;width:100%;margin:0;font-size:12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus-visible{outline:0;border-bottom:2px solid var(--utags-action-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt .utags_link_settings{font-size:12px;text-decoration:underline;cursor:pointer;color:#374151}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper{display:flex;justify-content:space-between}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper .utags_button_copy{cursor:pointer;font-size:10px;line-height:1;height:18px;padding:0 6px;border-radius:2px;color:var(--utags-action-button-text-color);background-color:var(--utags-action-button-bg-color);border:1px solid var(--utags-action-button-border-color);text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags{list-style-type:none;margin:0;padding:0 0 10px 0 !important;display:flex !important;flex-direction:row;flex-wrap:wrap}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty+button{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag:hover{--utags-text-tag-color: #000;--utags-text-tag-border-color: #000;--utags-text-tag-background-color: unset;opacity:.5;text-decoration:line-through !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag[data-utags_tag=":visited"]:hover{--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);opacity:.3}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_list_wrapper{display:flex;justify-content:space-between;max-height:200px;overflow-y:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list{flex-grow:1;list-style-type:none;margin:0;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:empty{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:not(:first-child){margin-left:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list::before{content:attr(data-utags_list_name);position:sticky;z-index:1;top:0;display:block;font-size:12px;font-weight:600;text-align:left;padding:0 8px 0 8px;cursor:default;background-color:#f8fafe}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li{box-sizing:border-box;cursor:pointer;font-size:12px;height:18px;display:flex;align-items:center;padding:0 8px 0 8px;margin:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active2{background-color:#fef2f2}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--utags-text-tag-font-family) !important;font-size:12px;line-height:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_emoji_list li span{font-family:var(--utags-emoji-tag-font-family) !important;line-height:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list .utags_text_tag::before{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_disable_tag_style .utags_text_tag{--utags-text-tag-color: #000;--utags-text-tag-border-width: 0;--utags-text-tag-border-color: unset;--utags-text-tag-background-color: #ffffff00 !important;--utags-text-tag-font-size: 12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container{position:absolute;top:-100px;right:100px;z-index:1000;background-color:#bdbdbd;padding:4px 8px;border-radius:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a{display:inline}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_01{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_11{object-position:0% 200%;position:absolute;top:-9999px;z-index:100;margin-top:18px !important;margin-left:0px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key=customStyleValue]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key^=customStyleValue_]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]{transition:opacity .1s ease-in}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6807\u9898\u515A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6A19\u984C\u9EE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5E7F,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5EE3,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65E0\u804A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5FFD\u7565,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",ignore,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",clickbait,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",promotion,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",sb,"]{opacity:10%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u9605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u95B1,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8B80,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8BFB,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65B0\u7528\u6237,"]{opacity:50%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",hide,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u9690\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u96B1\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C4F\u853D,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C01\u9396,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u4E0D\u518D\u663E\u793A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",block,"]{opacity:5%;display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",!"]{opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u95DC\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u7A0D\u540E\u9605\u8BFB,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fefce8) !important;opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fef2f2) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]:hover{opacity:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag2{color:#ff0 !important}[data-utags-visited="4"] [data-utags_list_node*=",:visited,"] [data-utags_condition_node][data-utags_visited="1"]{color:var(--utags-visited-title-color) !important}[data-utags-visited="2"] [data-utags_list_node*=",:visited,"]{opacity:var(--utags-visited-opacity)}[data-utags-visited="3"] [data-utags_list_node*=",:visited,"]{opacity:5%;display:none}.utags_no_hide [data-utags_list_node*=","]{display:var(--utags-list-node-display) !important}.utags_no_opacity_effect [data-utags_list_node*=","]{opacity:100% !important}textarea[data-key=emojiTags]{font-family:var(--utags-text-tag-font-family)}:root{--utags-list-node-display: block;--utags-captain-tag-background-color: #ffffffb3;--utags-captain-tag-background-color-overlap: #ffffffdd;--utags-captain-tag-color: #ff6361;--utags-captain-tag-hover-color: #256cf1;--utags-captain-tag-size: 14px;--utags-text-tag-color: red;--utags-text-tag-border-color: red;--utags-text-tag-background-color: unset;--utags-text-tag-font-size: 10px;--utags-text-tag-border-width: 1px;--utags-text-tag-max-width: 90px;--utags-text-tag-white-space: nowrap;--utags-text-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-emoji-tag-border-color: #fff0;--utags-emoji-tag-background-color: #fff0;--utags-emoji-tag-font-size: 12px;--utags-emoji-tag-border-width: 0;--utags-emoji-tag-font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-star-tag-color: #ffd700;--utags-star-tag-border-color: #fff0;--utags-star-tag-background-color: #fff0;--utags-star-tag-font-size: 14px;--utags-star-tag-border-width: 0;--utags-star-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-visited-tag-background-color: #bdbdbd;--utags-visited-tag-size: 11px;--utags-visited-title-color: #aaa;--utags-visited-opacity: 10%;--utags-button-text-color: #1a73e8;--utags-button-bg-color: #ffffff;--utags-button-border-color: #dadce0;--utags-button-hover-bg-color: #4285f40a;--utags-button-hover-border-color: #d2e3fc;--utags-action-button-text-color: #ffffff;--utags-action-button-bg-color: #1a73e8;--utags-action-button-border-color: #1a73e8;--utags-action-button-hover-bg-color: #1a73e8e6;--utags-action-button-hover-border-color: #1a73e8e6;--utags-notag-ul-disply-1: inline;--utags-notag-ul-float-1: none;--utags-notag-ul-height-1: unset;--utags-notag-ul-width-1: unset;--utags-notag-ul-position-1: unset;--utags-notag-ul-top-1: unset;--utags-notag-captain-tag-top-1: 0;--utags-notag-captain-tag-left-1: 0;--utags-notag-ul-disply-2: block;--utags-notag-ul-height-2: 0;--utags-notag-ul-width-2: 0;--utags-notag-ul-position-2: unset;--utags-notag-ul-top-2: unset;--utags-notag-captain-tag-top-2: -22px;--utags-notag-captain-tag-left-2: -4px;--utags-notag-ul-disply-3: block;--utags-notag-ul-height-3: 0;--utags-notag-ul-width-3: 0;--utags-notag-ul-position-3: absolute;--utags-notag-ul-top-3: 0;--utags-notag-captain-tag-top-3: 0;--utags-notag-captain-tag-left-3: -4px;--utags-notag-ul-disply-4: block;--utags-notag-ul-height-4: 0;--utags-notag-ul-width-4: 0;--utags-notag-ul-position-4: absolute;--utags-notag-ul-top-4: unset;--utags-notag-captain-tag-top-4: 0;--utags-notag-captain-tag-left-4: -4px;--utags-notag-ul-disply-5: block;--utags-notag-ul-height-5: 0;--utags-notag-ul-width-5: 0;--utags-notag-ul-position-5: absolute;--utags-notag-ul-top-5: -9999px;--utags-notag-captain-tag-top-5: 0;--utags-notag-captain-tag-left-5: -4px;--utags-notag-ul-disply: var(--utags-notag-ul-disply-1);--utags-notag-ul-float: var(--utags-notag-ul-float-1);--utags-notag-ul-height: var(--utags-notag-ul-height-1);--utags-notag-ul-width: var(--utags-notag-ul-width-1);--utags-notag-ul-position: var(--utags-notag-ul-position-1);--utags-notag-ul-top: var(--utags-notag-ul-top-1);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-1);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-1)}table{--utags-list-node-display: table-row-group}[data-utags_darkmode="1"]{--utags-visited-title-color: #666}'
   var SHADOW_SIGNAL_EVENT = "UTAGS_SHADOW_ROOT_CREATED"
+  function isCloudflareChallenges() {
+    return (
+      (document.querySelector(
+        'script[src^="https://challenges.cloudflare.com/turnstile/"]'
+      ) !== null &&
+        (document.querySelector("#challenge-success-text") !== null ||
+          document.querySelector('input[name="cf-turnstile-response"]') !==
+            null ||
+          document.querySelector(
+            'script[src*="/cdn-cgi/challenge-platform"]'
+          ) !== null)) ||
+      location.hostname === "challenges.cloudflare.com" ||
+      location.href.startsWith("https://linux.do/challenge")
+    )
+  }
   function interceptShadowDOM() {
+    if (isCloudflareChallenges()) {
+      return
+    }
     const originalAttachShadow = Element.prototype.attachShadow
     if (typeof originalAttachShadow !== "function") {
       return
     }
     Element.prototype.attachShadow = function (init) {
-      if (init && init.mode === "closed") {
+      if (init && init.mode === "closed" && !isCloudflareChallenges()) {
         init.mode = "open"
       }
       const shadow = originalAttachShadow.call(this, init)
@@ -5092,10 +5123,12 @@
     "object",
   ]
   var EXCLUDE_TAGS_SET = new Set(DEFAULT_EXCLUDE_TAGS)
+  var EXCLUDE_ANCESTOR_SELECTOR = DEFAULT_EXCLUDE_TAGS.join(",")
   function isScanTarget(node) {
     return (
       node instanceof HTMLElement &&
-      !EXCLUDE_TAGS_SET.has(node.tagName.toLowerCase())
+      !EXCLUDE_TAGS_SET.has(node.tagName.toLowerCase()) &&
+      !node.closest(EXCLUDE_ANCESTOR_SELECTOR)
     )
   }
   function setUtags(element, keyOrUserTag, meta) {
@@ -5114,6 +5147,7 @@
     "data-utags_exclude",
   ]
   var MATCH_ATTR = "data-utags-matched"
+  var MAX_SCAN_DURATION = 8e3
   var UTagsScanner = class {
     constructor(callback, options = {}) {
       this.callback = callback
@@ -5122,6 +5156,7 @@
       __publicField(this, "incrementalStack")
       __publicField(this, "isScanning")
       __publicField(this, "isCleaning")
+      __publicField(this, "isStoppedDueToLoop", false)
       __publicField(this, "scannedShadowRoots")
       __publicField(this, "observer")
       __publicField(this, "stats")
@@ -5165,6 +5200,35 @@
         true
       )
     }
+    stopDueToLoop(reason) {
+      if (this.isStoppedDueToLoop) return
+      this.isStoppedDueToLoop = true
+      this.isScanning = false
+      this.isCleaning = false
+      this.initialStack = []
+      this.incrementalStack = []
+      try {
+        this.observer.disconnect()
+      } catch (error) {
+        console.error(error)
+      }
+      const elapsed = this.startTime ? performance.now() - this.startTime : 0
+      console.error("[UTagsScanner] stopped due to a suspected scan loop", {
+        reason,
+        elapsedMs: elapsed,
+        loopCount: this.loopCount,
+        totalNodesProcessed: this.stats.totalNodesProcessed,
+      })
+    }
+    callOnBeforeMatch(node, action) {
+      if (!this.onBeforeMatch) return action === "add" ? true : void 0
+      try {
+        return this.onBeforeMatch(node, action)
+      } catch (error) {
+        console.error(error)
+        return action === "add" ? false : void 0
+      }
+    }
     /**
      * 检查节点是否是 root 的后代（穿透 Shadow DOM）
      */
@@ -5206,9 +5270,7 @@
       const isCurrentlyMatched = this.results.has(node)
       let finalDecision = false
       if (shouldMatch) {
-        finalDecision = this.onBeforeMatch
-          ? this.onBeforeMatch(node, "add") !== false
-          : true
+        finalDecision = this.callOnBeforeMatch(node, "add") !== false
       }
       if (finalDecision) {
         if (!isCurrentlyMatched) {
@@ -5221,7 +5283,7 @@
           node.classList.contains("utags_ul") || // Cloned utags target element
           node.hasAttribute("data-utags_id")
         ) {
-          if (this.onBeforeMatch) this.onBeforeMatch(node, "delete")
+          this.callOnBeforeMatch(node, "delete")
           node.removeAttribute(MATCH_ATTR)
         }
         if (isCurrentlyMatched) {
@@ -5281,6 +5343,7 @@
       }
     }
     handleMutations(mutations) {
+      if (this.isStoppedDueToLoop) return
       let needsUpdate = false
       let hasRemoval = false
       for (const m of mutations) {
@@ -5298,7 +5361,7 @@
             const n = m.addedNodes[i3]
             if (n instanceof HTMLElement) {
               if (n.classList.contains("utags_ul")) {
-                if (this.onBeforeMatch) this.onBeforeMatch(n, "delete")
+                this.callOnBeforeMatch(n, "delete")
               } else if (isScanTarget(n)) {
                 this.enqueueScan(n, true, false)
                 needsUpdate = true
@@ -5313,7 +5376,7 @@
           needsUpdate = true
         }
       }
-      if (needsUpdate || hasRemoval) {
+      if (false) {
         console.log("[sanner] handleMutations", mutations)
       }
       if (hasRemoval && !this.isCleaning) {
@@ -5384,6 +5447,7 @@
      * @param isInitial - 是否为全量/初始扫描模式
      */
     enqueueScan(node, scanChildren = true, isInitial = false) {
+      if (this.isStoppedDueToLoop) return
       const task = { node, scanChildren, isInitial }
       if (isInitial) {
         this.initialStack.push(task)
@@ -5400,17 +5464,25 @@
       }
     }
     processStack(deadline) {
+      if (this.isStoppedDueToLoop) return
       const cycleStart = performance.now()
       let currentLoopNodesProcessed = 0
       let currentLoopNodesExcluded = 0
       this.loopCount++
+      const activeDurationMs = () =>
+        this.currentScanActiveTime + (performance.now() - cycleStart)
       console.log(
         "processStack [start]",
         this.loopCount,
         deadline.timeRemaining(),
+        activeDurationMs().toFixed(2),
         this.initialStack.length,
         this.incrementalStack.length
       )
+      if (activeDurationMs() > MAX_SCAN_DURATION) {
+        this.stopDueToLoop("processStack ran continuously for too long")
+        return
+      }
       while (deadline.timeRemaining() > 0) {
         let item
         let currentStackIsInitial = false
@@ -5428,8 +5500,15 @@
         this.stats.totalNodesProcessed++
         this.currentScanNodesProcessed++
         currentLoopNodesProcessed++
+        if (
+          currentLoopNodesProcessed % 10 === 0 &&
+          activeDurationMs() > MAX_SCAN_DURATION
+        ) {
+          this.stopDueToLoop("processStack ran continuously for too long")
+          return
+        }
         if (!(node instanceof Element)) {
-          if (node instanceof ShadowRoot) {
+          if (node instanceof ShadowRoot && node.isConnected) {
             if (!this.scannedShadowRoots.has(node)) {
               this.scannedShadowRoots.add(node)
               this.observer.observe(node, this.observerConfig)
@@ -5449,6 +5528,10 @@
               }
             }
           }
+          continue
+        }
+        if (!node.isConnected) {
+          this._updateNodeStatus(node, false)
           continue
         }
         const matchesLocalExclude = node.matches(this.exclude)
@@ -6650,7 +6733,12 @@
         }
         return false
       },
-      excludeSelectors: [...default_default2.excludeSelectors],
+      excludeSelectors: [
+        ...default_default2.excludeSelectors,
+        "tp-yt-app-drawer",
+        "button-view-model",
+        "button",
+      ],
       validMediaSelectors: ["a span.ytSpecIconShapeHost svg"],
       postProcess() {
         const host3 = location.host
@@ -6661,7 +6749,7 @@
           return
         }
         const bookmarkButton =
-          '<yt-button-view-model class="utags_custom_btn utags_custom_bookmark_btn ytd-menu-renderer">\n      <button-view-model class="ytSpecButtonViewModelHost style-scope ytd-menu-renderer">\n      <button class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading yt-spec-button-shape-next--enable-backdrop-filter-experiment" title="Add star" aria-label="Add star" aria-disabled="false" style="">\n      <div aria-hidden="true" class="yt-spec-button-shape-next__icon">\n      <span class="ytIconWrapperHost" style="width: 24px; height: 24px;">\n      <span class="yt-icon-shape ytSpecIconShapeHost">\n      <div style="width: 100%; height: 100%; display: block; fill: currentcolor;">\n      '.concat(
+          '<yt-button-view-model data-utags_exclude="" class="utags_custom_btn utags_custom_bookmark_btn ytd-menu-renderer">\n      <button-view-model class="ytSpecButtonViewModelHost style-scope ytd-menu-renderer">\n      <button class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading yt-spec-button-shape-next--enable-backdrop-filter-experiment" title="Add star" aria-label="Add star" aria-disabled="false" style="">\n      <div aria-hidden="true" class="yt-spec-button-shape-next__icon">\n      <span class="ytIconWrapperHost" style="width: 24px; height: 24px;">\n      <span class="yt-icon-shape ytSpecIconShapeHost">\n      <div style="width: 100%; height: 100%; display: block; fill: currentcolor;">\n      '.concat(
             getStarIconSvg(22),
             '\n      </div></span></span></div>\n      <div class="yt-spec-button-shape-next__button-text-content">Star</div><yt-touch-feedback-shape style="border-radius: inherit;">\n      <div aria-hidden="true" class="yt-spec-touch-feedback-shape yt-spec-touch-feedback-shape--touch-response">\n      <div class="yt-spec-touch-feedback-shape__stroke"></div><div class="yt-spec-touch-feedback-shape__fill">\n      </div></div></yt-touch-feedback-shape></button></button-view-model></yt-button-view-model>'
           )
@@ -6676,6 +6764,7 @@
             nextElement == null
               ? void 0
               : nextElement.classList.contains("utags_custom_bookmark_btn")
+          console.log("isBookmarkButton", isBookmarkButton, nextElement)
           if (isBookmarkButton) {
             bookmarkElement = nextElement
           } else {
@@ -6716,7 +6805,7 @@
     }
   })()
   var bilibili_com_default =
-    ':not(#a):not(#b):not(#c) .utags_ul_0_{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .utags_ul_1_{object-position:200% 50%;position:absolute;top:-9999px;margin-top:0px !important;margin-left:0px !important;flex-wrap:nowrap !important}:not(#a):not(#b):not(#c) .video-page-card-small div.upname+.utags_ul_1__{display:block !important}:not(#a):not(#b):not(#c) .bili-video-card__info--right a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .bili-video-card__info--right h3.bili-video-card__info--tit+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-card-small a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-card-small h3.bili-video-card__info--tit+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-operator-card-small a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-operator-card-small h3.bili-video-card__info--tit+.utags_ul_0__{display:block !important;height:0}:not(#a):not(#b):not(#c) .bili-video-card__info--right a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .bili-video-card__info--right h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-card-small a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-card-small h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-operator-card-small a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-operator-card-small h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag{top:-22px;background-color:hsla(0,0%,100%,.8666666667) !important}'
+    ':not(#a):not(#b):not(#c) .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .utags_ul_1_{object-position:200% 50%;position:absolute;top:-9999px;margin-top:0px !important;margin-left:0px !important;flex-wrap:nowrap !important}:not(#a):not(#b):not(#c) .video-page-card-small div.upname+.utags_ul_1{display:block !important}:not(#a):not(#b):not(#c) .video-info-title-inner{flex-wrap:wrap}:not(#a):not(#b):not(#c) .bili-video-card__info .bili-video-card__info--bottom{flex-wrap:wrap}:not(#a):not(#b):not(#c) .bili-video-card__info--right a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .bili-video-card__info--right h3.bili-video-card__info--tit+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-card-small a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-card-small h3.bili-video-card__info--tit+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-operator-card-small a[href*="/video/"]+.utags_ul_0__,:not(#a):not(#b):not(#c) .video-page-operator-card-small h3.bili-video-card__info--tit+.utags_ul_0__{display:block !important;height:0}:not(#a):not(#b):not(#c) .bili-video-card__info--right a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .bili-video-card__info--right h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-card-small a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-card-small h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-operator-card-small a[href*="/video/"]+.utags_ul_0__ .utags_captain_tag,:not(#a):not(#b):not(#c) .video-page-operator-card-small h3.bili-video-card__info--tit+.utags_ul_0__ .utags_captain_tag{top:-22px;background-color:hsla(0,0%,100%,.8666666667) !important}'
   var bilibili_com_default2 = /* @__PURE__ */ (() => {
     const prefix2 = "https://www.bilibili.com/"
     const prefix22 = "https://space.bilibili.com/"
@@ -6861,7 +6950,9 @@
           if (!title) {
             return false
           }
-          const targetElement = element.closest("h3.bili-video-card__info--tit")
+          const targetElement = element.closest(
+            "h3.bili-video-card__info--tit,.bili-video-card__details .bili-video-card__title"
+          )
           if (targetElement && targetElement !== element) {
             setUtagsAttributes(targetElement, { key, type: "video", title })
             return false
@@ -6880,6 +6971,7 @@
         ".primary-btn",
         "a.send-msg",
         "a.message",
+        "a.message-btn",
         "a.up-avatar",
         ".player-wrap",
         ".video-toolbar-container",
@@ -6891,10 +6983,21 @@
         ".usercard-wrap .social",
         "#fans",
         "#follow",
+        "#navigator",
+        "#navigator-fixed",
+        ".h-action",
+        ".h-f-btn",
+        ".section-title",
+        ".page-head",
+        ".contribution-list",
+        ".section.fav",
+        ".fav-list-container",
+        ".fav-play",
       ],
       validMediaSelectors: [
         "svg.icon-up",
         "svg.bili-video-card__info--owner__up",
+        "svg.bili-video-card__info--author-ico",
         ".upname svg",
       ],
       getStyle: () => bilibili_com_default,
@@ -9146,6 +9249,15 @@
       preProcess() {
         var _a
         let key = getUserProfileUrl(location.href)
+        if (key) {
+          const element = $(".avatar-container + .info-container h1")
+          if (element) {
+            const title = getTrimmedTitle(element)
+            if (title) {
+              setUtagsAttributes(element, { key, title, type: "user" })
+            }
+          }
+        }
         key = getGroupUrl(location.href)
         if (key) {
           const element = $("h1.group-title")
@@ -9198,12 +9310,24 @@
         if (
           titleLowerCase.startsWith("more") ||
           titleLowerCase.startsWith("edit") ||
-          /^[\d,.]+(m|h|d|mo|k)?$/.test(titleLowerCase) ||
+          /^[\d,.]+(y|m|h|d|s|mo|k)?$/.test(titleLowerCase) ||
           /^\d+( (mins?|hours?|days?|months?|years?) ago)?$/.test(
             titleLowerCase
           )
         ) {
           return false
+        }
+        {
+          const title2 = element.title
+          if (
+            element.closest(".align-right") &&
+            (title2.includes("UTC") || title2.includes("GMT"))
+          ) {
+            return false
+          }
+          if (element.closest(".align-right") && titleLowerCase === "-") {
+            return false
+          }
         }
         return true
       },
@@ -9247,6 +9371,7 @@
         ".tag-section-header",
         ".nav-links",
         ".photo-list-album-view",
+        ".general-stats",
         ".contact-list-num",
         ".contact-list-table th",
         ".bio-infos-container .archives-link",
@@ -9277,17 +9402,22 @@
         'a[data-track="groupDiscussionTopicReplyCountClick"]',
         ".pro-badge-new",
         ".pro-badge-legacy",
+        ".see-all-block",
         'a[href*="?change_lang="]',
         ".forumSearch form",
         ".TopicListing small a",
         "#DiscussTopic .Said small a",
         ".TopicReply .Said small a",
+        "td.align-right",
+        ".add-button",
         ".group-blast-zeus",
         ".hide-link",
         '[data-track="join-group"]',
         ".set-desc.group-desc .short a",
         "#feeds-xml a",
         ".slideshow-bottom a",
+        ".account-settings-page-view",
+        ".account-settings-view",
       ],
       getStyle: () => flickr_com_default,
       getCanonicalUrl: getCanonicalUrl2,
@@ -10029,8 +10159,16 @@
       ? [...currentSite.matchedNodesSelectors, "[data-utags_link]"]
       : [...default_default2.matchedNodesSelectors, "a[href]"]
   )
+  var scannerInstance
+  var lastScanDomOptions
+  function isScannerBusy() {
+    return Boolean(
+      (scannerInstance == null ? void 0 : scannerInstance.isScanning) ||
+      (scannerInstance == null ? void 0 : scannerInstance.isCleaning)
+    )
+  }
   var updateMatchedNodesSelector = (customSelector) => {
-    matchedNodesSelector = joinSelectors(
+    const nextMatchedNodesSelector = joinSelectors(
       currentSite.matchedNodesSelectors &&
         currentSite.matchedNodesSelectors.length > 0
         ? [
@@ -10040,6 +10178,15 @@
           ]
         : [...default_default2.matchedNodesSelectors, "a[href]", customSelector]
     )
+    if (nextMatchedNodesSelector === matchedNodesSelector) {
+      return
+    }
+    matchedNodesSelector = nextMatchedNodesSelector
+    if (scannerInstance) {
+      scannerInstance.updateConfig(
+        createUTagsScannerOptions(lastScanDomOptions)
+      )
+    }
   }
   var excludeSelector = joinSelectors([
     BASE_EXCLUDE_SELECTOR,
@@ -10152,27 +10299,6 @@
     })
   }
   function matchedNodes() {
-    const matchedNodesSet = /* @__PURE__ */ new Set()
-    try {
-      const currentPageLink = $("#utags_current_page_link")
-      if (currentPageLink) {
-        const key = getCanonicalUrl(currentPageLink.href)
-        if (key) {
-          const title = getTrimmedTitle(currentPageLink)
-          const description = currentPageLink.dataset.utags_description
-          const meta = {}
-          if (title) meta.title = title
-          if (description) meta.description = description
-          setElementUtags(currentPageLink, {
-            key,
-            meta,
-          })
-          matchedNodesSet.add(currentPageLink)
-        }
-      }
-    } catch (error) {
-      console.error(error)
-    }
     if (typeof currentSite.postProcess === "function") {
       try {
         currentSite.postProcess()
@@ -10180,11 +10306,10 @@
         console.error(error)
       }
     }
-    return [...matchedNodesSet]
+    return []
   }
-  function scanDom(options) {
-    console.debug("UTagsScanner start", matchedNodesSelector, excludeSelector)
-    const initialOptions = {
+  function createUTagsScannerOptions(options) {
+    return {
       include: matchedNodesSelector ? matchedNodesSelector.split(",") : void 0,
       ignore: ["[data-utags_ignore]"],
       exclude: excludeSelector
@@ -10205,7 +10330,8 @@
           if (
             !href ||
             typeof href !== "string" ||
-            !validateFunction(element, href)
+            (!validateFunction(element, href) &&
+              !element.closest("#utags_current_page_link"))
           ) {
             cleanupUtags(element)
             return false
@@ -10249,6 +10375,11 @@
         }
       },
     }
+  }
+  function scanDom(options) {
+    lastScanDomOptions = options
+    console.debug("UTagsScanner start", matchedNodesSelector, excludeSelector)
+    const initialOptions = createUTagsScannerOptions(options)
     let debugTimeout
     let currentResult
     const scanner = new UTagsScanner((list, stats) => {
@@ -10272,6 +10403,7 @@
         }, 100)
       }
     }, initialOptions)
+    scannerInstance = scanner
     if (document.body) {
       scanner.start(document.body)
     } else {
@@ -10311,7 +10443,10 @@
   function ensureStyleInRoot(root, cssText) {
     var _a, _b
     const rootWithAdopted = root
-    if (rootWithAdopted.adoptedStyleSheets) {
+    if (
+      rootWithAdopted.adoptedStyleSheets &&
+      typeof rootWithAdopted.adoptedStyleSheets.includes === "function"
+    ) {
       if (!sharedCSSStyleSheet) {
         sharedCSSStyleSheet = new CSSStyleSheet()
       }
@@ -10980,8 +11115,7 @@
   var isQuickStarAvailable = () => {
     if (
       host2 === "linux.do" ||
-      host2 === "idcflare.com" ||
-      host2.includes("youtube.com") || // eslint-disable-next-line no-restricted-globals
+      host2 === "idcflare.com" || // FIXME: 临时关闭 youtube.com 的快速收藏功能
       host2.includes("p".concat(atob("b3I="), "nhub.com"))
     ) {
       return true
@@ -11263,6 +11397,7 @@
     linkElement.href = options.href || location.href
     linkElement.textContent = options.title || document.title
     linkElement.id = "utags_current_page_link"
+    linkElement.dataset.utags_link = ""
     if (options.description) {
       linkElement.dataset.utags_description = options.description
     }
@@ -11311,7 +11446,13 @@
       showCurrentPageLinkUtagsPrompt(tag, remove)
     }
   )
-  async function updateAddTagsToCurrentPageMenuCommand(tags) {
+  async function updateAddTagsToCurrentPageMenuCommand() {
+    const key = getCanonicalUrl(location.href)
+    if (!key) {
+      return
+    }
+    const object = getTags(key)
+    const tags = object.tags
     await menuCommandManager.updateMenuCommand(tags)
     await menuCommandManager.updateQuickTagMenuCommands(tags)
   }
@@ -11489,6 +11630,7 @@
   }
   configureScannedNodeProcessor(processNodeForDisplay)
   configureQueueEmptyCallback(displayTags)
+  configureScannedNodeProcessingBlocker(isScannerBusy)
   async function displayTags() {
     if (isAllTagsHidden()) {
       return
@@ -11536,11 +11678,6 @@
           "," + uniq(tagsArray.join(",").split(",")).join(",") + ","
       }
     }
-    const key = getCanonicalUrl(location.href)
-    if (key) {
-      const object = getTags(key)
-      await updateAddTagsToCurrentPageMenuCommand(object.tags)
-    }
     if (DEBUG) {
       console.debug("end of displayTags")
     }
@@ -11560,6 +11697,7 @@
         console.log("Start re-display tags")
         enqueueScannedNodes(lastScannerResult)
       }
+      void updateAddTagsToCurrentPageMenuCommand()
     }
     addTagsValueChangeListener(onStorageChange)
     addVisitedValueChangeListener(onStorageChange)
@@ -11952,6 +12090,14 @@
     await updateAddTagsToCurrentPageMenuCommand()
     bindDocumentEvents(eventManager)
     bindWindowEvents(eventManager)
+    let lastLocation = location.href
+    eventManager.addEventListener(globalThis, "locationchange", () => {
+      if (lastLocation === location.href) {
+        return
+      }
+      lastLocation = location.href
+      void updateAddTagsToCurrentPageMenuCommand()
+    })
     const cleanup = () => {
       eventManager.removeAllEventListeners()
       observer.disconnect()
@@ -11973,7 +12119,6 @@
       return attributeName && monitoredAttributes.has(attributeName)
     }
     const observer = new MutationObserver(async (mutationsList) => {
-      console.debug("mutation", Date.now(), mutationsList)
       let shouldUpdate = false
       for (const mutationRecord of mutationsList) {
         if (
@@ -11992,7 +12137,6 @@
           break
         }
       }
-      console.debug("shouldUpdate", shouldUpdate)
       if (shouldUpdate) {
       }
       checkVimiumHint()
