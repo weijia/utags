@@ -8,7 +8,9 @@ import pkg from './package.json' assert { type: 'json' }
 export default defineConfig({
   build: {
     target: 'esnext',
+    assetsDir: './', // Ensure assets are placed in the same directory
   },
+  base: './', // Use relative paths for all assets
   plugins: [
     paraglideVitePlugin({
       project: './project.inlang',
@@ -29,7 +31,7 @@ export default defineConfig({
         theme_color: '#ffffff',
         icons: [
           {
-            src: '/android-icon-192x192.png',
+            src: './android-icon-192x192.png', // Relative path for icon
             sizes: '192x192',
             type: 'image/png',
           },

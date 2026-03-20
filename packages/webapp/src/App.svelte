@@ -877,4 +877,41 @@
       --aside-area-width: calc(var(--sidebar-width) * 3);
     }
   }
+  @media (max-width: 768px) {
+    .container {
+      flex-direction: column; /* 改为垂直布局 */
+    }
+
+    .filter-container {
+      width: 100%; /* 占满宽度 */
+    }
+
+    .content-area {
+      width: 100%; /* 占满宽度 */
+    }
+
+    .vertical-seperator-line {
+      display: none; /* 隐藏竖直分隔线 */
+    }
+
+    .filter-switcher {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .filter-switcher button {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .aside-area {
+      flex-direction: column;
+      width: 100%;
+      min-width: 100%;
+    }
+
+    .filter-controls {
+      display: none;
+    }
+  }
 </style>

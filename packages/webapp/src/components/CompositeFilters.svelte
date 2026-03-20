@@ -563,4 +563,19 @@
   .reset-filter {
     align-self: var(--sidebar-reset-filter-align-self);
   }
+
+  @media (max-width: 768px) {
+    .composite-filters {
+      height: auto; /* 根据内容调整高度 */
+      max-height: 50vh; /* 限制最大高度为视口的一半 */
+      overflow-y: auto; /* 如果内容超出，允许滚动 */
+    }
+  }
+
+  @media (max-width: 768px) {
+    .filter-group-tags,
+    .filter-group-domains {
+      display: none;
+    }
+  }
 </style>

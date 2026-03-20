@@ -52,3 +52,4 @@ tsconfig.tsbuildinfo
 **/mock-data.json
 **/mock-server/.mock-data/
 **/coverage/*
+packages/docusaurus/

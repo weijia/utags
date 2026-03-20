@@ -175,8 +175,9 @@
 
 <aside
   class="navigation-sidebar z-49 h-full w-[var(--sidebar-width)] overflow-x-hidden overflow-y-auto bg-white pt-4 pr-2 pb-10 transition-all duration-200 ease-in-out select-none dark:bg-gray-900"
-  class:collapsed={isCollapsed}>
-  {#if !isCollapsed || true}
+  class:collapsed={isCollapsed}
+  style="display: {isCollapsed ? 'none' : 'block'}">
+  {#if !isCollapsed}
     <nav class="flex w-[calc(var(--sidebar-width)-11px)] flex-col gap-1">
       {#each navGroups as group, i}
         <NavigationGroup {group} />

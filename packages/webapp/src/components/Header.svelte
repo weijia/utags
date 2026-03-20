@@ -80,8 +80,15 @@
   {#if !collapsed}
     <div
       class="absolute top-16 right-0 left-0 z-50 border-b border-(color:--seperator-line-color) bg-white/90 shadow-md md:hidden dark:bg-black/90">
-      <div class="flex h-full flex-col gap-2 p-4" style="height: 100vh;">
-        手机版还没有优化，暂时无法使用
+      <div class="flex h-full flex-col gap-4 p-4">
+        <a href="/" class="text-gray-800 dark:text-gray-200 hover:underline">首页</a>
+        <a href="/bookmarks" class="text-gray-800 dark:text-gray-200 hover:underline">书签</a>
+        <a href="/settings" class="text-gray-800 dark:text-gray-200 hover:underline">设置</a>
+        <button
+          class="mt-auto rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onclick={() => (collapsed = true)}>
+          关闭菜单
+        </button>
       </div>
     </div>
   {/if}
