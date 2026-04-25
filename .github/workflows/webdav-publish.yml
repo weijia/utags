@@ -31,10 +31,10 @@ jobs:
       - name: Package the project
         run: pnpm package
       - name: Upload to WebDAV
-        uses: weijia/action-upload-webdav@main
+        uses: weijia/action-upload-webdav@master
         with:
           url: ${{ secrets.WEBDAV_URL }}
           username: ${{ secrets.WEBDAV_USERNAME }}
           password: ${{ secrets.WEBDAV_PASSWORD }}
           localPath: ./packages/webapp/dist
-          remotePath: /app_data/utags
+          remotePath: online/utags
