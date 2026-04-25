@@ -50,6 +50,5 @@ jobs:
           webdav-url: ${{ secrets.WEBDAV_URL }}
           webdav-username: ${{ secrets.WEBDAV_USERNAME }}
           webdav-password: ${{ secrets.WEBDAV_PASSWORD }}
-          webdav-root: ${{ secrets.WEBDAV_ROOT }}
+          webdav-root: online/utags
           source-directory: ./packages/webapp/dist
-          upload-directory: online/utags
