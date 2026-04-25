@@ -87,6 +87,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
     const filePath = this.getFilePath() // + Use getFilePath
     try {
       const stat = await this.client.stat(filePath)
+      console.log(`WebDAV getRemoteMetadata: Received ETag from server: ${stat.etag}`)
       return {
         version: stat.etag!,
         sha: stat.etag!,
@@ -213,23 +214,29 @@ export class WebDAVSyncAdapter implements SyncAdapter<
       }
 
       const options: PutFileContentsOptions = {}
+      let etagWithQuotes: string | undefined
       if (expectedRemoteMeta?.version) {
-        options.headers = { 'If-Match': expectedRemoteMeta.version }
+        // Add quotes around ETag for If-Match header
+        etagWithQuotes = expectedRemoteMeta.version.startsWith('"') ? expectedRemoteMeta.version : `"${expectedRemoteMeta.version}"`
+        options.headers = { 'If-Match': etagWithQuotes }
+        console.log(`WebDAV upload: Sending If-Match header with ETag: ${etagWithQuotes}`)
+        console.log(`WebDAV upload: Original ETag from metadata: ${expectedRemoteMeta.version}`)
       }
 
       try {
         await this.client.putFileContents(filePath, data, options)
       } catch (error: any) {
-        console.log(error)
+        console.log('WebDAV upload error:', error)
+        console.log('WebDAV upload options:', JSON.stringify(options, null, 2))
         if (error.status === 412) {
           // Precondition Failed (ETag mismatch)
           console.warn(
-            `WebDAV upload failed due to ETag mismatch for ${filePath}. Expected: ${expectedRemoteMeta?.version}`
+            `WebDAV upload failed due to ETag mismatch for ${filePath}. Expected (with quotes): ${etagWithQuotes}, Original: ${expectedRemoteMeta?.version}`
           )
           // It's important to throw a specific error or handle this case appropriately
           // so the SyncManager can potentially trigger a merge or re-fetch.
           throw new Error(
-            `WebDAV upload failed: Precondition Failed (ETag mismatch or other condition). Original error: ${error.message || error}`
+            `WebDAV upload failed: Precondition Failed (ETag mismatch or other condition). Expected ETag: ${etagWithQuotes}, Original error: ${error.message || error}`
           )
         }
 
@@ -299,6 +306,8 @@ export class WebDAVSyncAdapter implements SyncAdapter<
     }
 
     // Use the 'path' from 'target' and 'scope' from 'config' for buildSyncPath
-    return '/' + buildSyncPath(this.config.target.path, this.config.scope)
+    const filePath = '/' + buildSyncPath(this.config.target.path, this.config.scope)
+    console.log(`WebDAV getFilePath: Generated path: ${filePath}`)
+    return filePath
   }
 }
