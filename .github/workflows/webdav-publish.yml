@@ -47,8 +47,9 @@ jobs:
       - name: Upload to WebDAV
         uses: weijia/action-upload-webdav@master
         with:
-          url: ${{ secrets.WEBDAV_URL }}
-          username: ${{ secrets.WEBDAV_USERNAME }}
-          password: ${{ secrets.WEBDAV_PASSWORD }}
-          localPath: ./packages/webapp/dist
-          remotePath: online/utags
+          webdav-url: ${{ secrets.WEBDAV_URL }}
+          webdav-username: ${{ secrets.WEBDAV_USERNAME }}
+          webdav-password: ${{ secrets.WEBDAV_PASSWORD }}
+          webdav-root: ${{ secrets.WEBDAV_ROOT }}
+          source-directory: ./packages/webapp/dist
+          upload-directory: online/utags
