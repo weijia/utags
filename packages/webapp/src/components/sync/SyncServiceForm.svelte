@@ -149,6 +149,7 @@
         break
 
       case 'webdav':
+      case 'dataDirectory':
         if (
           !config.credentials.username ||
           config.credentials.username.trim().length === 0
@@ -173,7 +174,7 @@
             errors.push('WebDAV URL must be a valid URL')
           }
         }
-        // Path is optional for WebDAV, no validation needed
+        // Path is optional for WebDAV and Data Directory, no validation needed
         break
 
       case 'customApi':
@@ -252,9 +253,10 @@
         }
         break
       case 'webdav':
+      case 'dataDirectory':
         serviceToSave = {
           ...baseConfig,
-          type: 'webdav',
+          type: config.type,
           credentials: {
             username: config.credentials.username?.trim() || '',
             password: config.credentials.password?.trim() || '',
@@ -377,6 +379,7 @@
         class="mt-1 block w-full rounded-md border-gray-300 py-2 pr-10 pl-3 text-base focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
         <option value="github">GitHub</option>
         <option value="webdav">WebDAV</option>
+        <option value="dataDirectory">Tide Mark (WebDAV)</option>
         {#if service?.type === 'customApi'}
           <option value="customApi" selected>Custom API</option>
         {/if}
@@ -386,18 +389,18 @@
         <!-- <option value="customApi">Custom API</option>
         <option value="browserExtension">Browser Extension</option> -->
       </select>
-      {#if config.type === 'webdav'}
+      {#if config.type === 'webdav' || config.type === 'dataDirectory'}
         <InputField
           bind:value={config.target.url}
           placeholder="https://example.com/dav"
           onInput={clearValidationErrors}>
-          WebDAV URL:
+          {config.type === 'webdav' ? 'WebDAV URL:' : 'WebDAV URL:'}
         </InputField>
         <InputField
           bind:value={config.target.path}
-          placeholder="utags/bookmarks.json"
+          placeholder={config.type === 'webdav' ? 'utags/bookmarks.json' : 'tide-mark'}
           onInput={clearValidationErrors}>
-          Path:
+          {config.type === 'webdav' ? 'File Path:' : 'Data Directory Path:'}
         </InputField>
         <InputField
           bind:value={config.credentials.username}

@@ -10,16 +10,19 @@ import type {
   ApiTarget,
   BrowserExtensionCredentials,
   BrowserExtensionTarget,
+  DataDirectoryCredentials,
+  DataDirectoryTarget,
 } from '../sync/types.js'
 
 // Define a type for all possible credential types
 export type CredentialsType =
   | GithubCredentials
   | WebDAVCredentials
+  | DataDirectoryCredentials
   | ApiCredentials
 
 // Define a type for all possible target types
-export type TargetType = GithubTarget | WebDAVTarget | ApiTarget
+export type TargetType = GithubTarget | WebDAVTarget | DataDirectoryTarget | ApiTarget
 
 // Define the structure for sync service configurations
 export type SyncSettings = {
@@ -36,6 +39,7 @@ const defaultSyncSettings: SyncSettings = {
 const validTypes = new Set([
   'github',
   'webdav',
+  'dataDirectory',
   'customApi',
   'browserExtension',
 ])
