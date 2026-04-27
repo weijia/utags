@@ -17,11 +17,12 @@ export type SyncServiceConfig<
   //     | GithubCredentials
   //     | WebDAVCredentials
   //     | ApiCredentials
-  //     | BrowserExtensionCredentials // Service-specific credentials
-  // target: GithubTarget | WebDAVTarget | ApiTarget | BrowserExtensionTarget // Service-specific target
+  //     | BrowserExtensionCredentials
+  //     | DataDirectoryCredentials // Service-specific credentials
+  // target: GithubTarget | WebDAVTarget | ApiTarget | BrowserExtensionTarget | DataDirectoryTarget // Service-specific target
 > = {
   id: string // Unique ID for this configuration
-  type: 'github' | 'webdav' | 'customApi' | 'browserExtension' // Type of the sync service
+  type: 'github' | 'webdav' | 'customApi' | 'browserExtension' | 'dataDirectory' // Type of the sync service
   name: string // User-defined name for this configuration
   credentials: C // Service-specific credentials
   target: T // Service-specific target
@@ -192,6 +193,25 @@ export type BrowserExtensionTarget = {
   // For example, could specify a named data store within the target extension
   extensionId: string // ID of the target browser extension
   extensionName?: string // Optional: User-friendly name of the target extension
+}
+
+/**
+ * Credentials for Data Directory synchronization.
+ */
+/**
+ * Credentials for Data Directory synchronization with WebDAV support.
+ */
+export type DataDirectoryCredentials = {
+  username?: string // WebDAV username (optional)
+  password?: string // WebDAV password (optional)
+}
+
+/**
+ * Target configuration for Data Directory synchronization.
+ */
+export type DataDirectoryTarget = {
+  path: string // Path to the data directory
+  url?: string // WebDAV server URL (optional)
 }
 
 /**

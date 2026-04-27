@@ -33,6 +33,7 @@ import { CustomApiSyncAdapter } from './custom-api-sync-adapter.js'
 import { GitHubSyncAdapter } from './git-hub-sync-adapter.js'
 import { BrowserExtensionSyncAdapter } from './browser-extension-sync-adapter.js'
 import { WebDAVSyncAdapter } from './webdav-sync-adapter.js'
+import { DataDirectorySyncAdapter } from './data-directory-sync-adapter.js'
 import type {
   SyncAdapter,
   SyncServiceConfig,
@@ -282,6 +283,11 @@ export class SyncManager extends EventEmitter<SyncEvents> {
 
       case 'browserExtension': {
         adapter = new BrowserExtensionSyncAdapter()
+        break
+      }
+
+      case 'dataDirectory': {
+        adapter = new DataDirectorySyncAdapter()
         break
       }
 
