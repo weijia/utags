@@ -4,13 +4,9 @@ import type {
   SyncMetadata,
   SyncServiceConfig,
 } from './types.js'
-import { readFileSync, writeFileSync, statSync, existsSync, mkdirSync } from 'fs'
-import { dirname, join } from 'path'
 import type { BookmarksStore } from '../types/bookmarks.js'
 import { createClient, type WebDAVClient as WebDAVClientType } from '../lib/webdav-client.js'
 import type { DataDirectoryCredentials, DataDirectoryTarget } from './types.js'
-
-
 
 /**
  * Tide Mark data structures
@@ -203,13 +199,13 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
   DataDirectoryTarget
 > {
   private config: SyncServiceConfig<DataDirectoryCredentials, DataDirectoryTarget> | undefined
-  private directoryPath: string | undefined
   private client: WebDAVClientType | undefined
 
   /**
    * Initializes the Data Directory sync adapter with the given configuration.
-   * @param config - The configuration for the Data Directory service, including target path and optional WebDAV URL.
-   * @throws Error if configuration is not provided or if the target directory does not exist.
+   * Uses WebDAV to access the Tide Mark data directory.
+   * @param config - The configuration for the Data Directory service, including WebDAV URL and path.
+   * @throws Error if configuration is not provided or if the WebDAV connection test fails.
    */
   async init(
     config: SyncServiceConfig<DataDirectoryCredentials, DataDirectoryTarget>
@@ -218,33 +214,22 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
       throw new Error('Configuration must be provided for DataDirectorySyncAdapter.')
     }
 
-    this.config = config
-    this.directoryPath = config.target.path
+    if (!config.target.url) {
+      throw new Error('WebDAV URL must be provided for DataDirectorySyncAdapter.')
+    }
 
-    // Initialize WebDAV client if URL is provided
-    if (config.target.url) {
-      this.client = createClient(config.target.url, {
-        username: config.credentials?.username,
-        password: config.credentials?.password,
-      })
-      // Test WebDAV connection
-      try {
-        await this.client.getDirectoryContents('/')
-      } catch (error: any) {
-        console.error('WebDAV initial connection test failed:', error)
-        throw new Error(`WebDAV initial connection test failed: ${error.message || error}`)
-      }
-    } else {
-      // Local file system mode
-      const targetPath = this.getDirectoryPath()
-      if (!existsSync(targetPath)) {
-        try {
-          mkdirSync(targetPath, { recursive: true })
-        } catch (error: any) {
-          console.error('Failed to create data directory:', error)
-          throw new Error(`Failed to create data directory: ${error.message || error}`)
-        }
-      }
+    this.config = config
+
+    this.client = createClient(config.target.url, {
+      username: config.credentials?.username,
+      password: config.credentials?.password,
+    })
+
+    try {
+      await this.client.getDirectoryContents('/')
+    } catch (error: any) {
+      console.error('WebDAV initial connection test failed:', error)
+      throw new Error(`WebDAV initial connection test failed: ${error.message || error}`)
     }
   }
 
@@ -253,108 +238,6 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
    */
   destroy(): void {
     console.log('DataDirectorySyncAdapter destroyed.')
-  }
-
-  /**
-   * Checks if the adapter is in WebDAV mode.
-   */
-  private isWebDAVMode(): boolean {
-    return !!this.client
-  }
-
-  /**
-   * Gets the full file path for the given filename.
-   */
-  private getFilePath(filename: string): string {
-    if (this.isWebDAVMode()) {
-      // WebDAV mode: use path from config
-      const basePath = this.directoryPath || ''
-      return basePath.endsWith('/') ? `${basePath}${filename}` : `${basePath}/${filename}`
-    } else {
-      // Local file system mode
-      return join(this.getDirectoryPath(), filename)
-    }
-  }
-
-  /**
-   * Reads a file from either local filesystem or WebDAV.
-   */
-  private async readFile(filename: string): Promise<string | undefined> {
-    if (this.isWebDAVMode()) {
-      try {
-        const filePath = this.getFilePath(filename)
-        const content = await this.client!.getFileContents(filePath, { format: 'text' })
-        return content as string
-      } catch (error: any) {
-        if (error.status === 404) {
-          return undefined
-        }
-        throw error
-      }
-    } else {
-      const filePath = this.getFilePath(filename)
-      if (!existsSync(filePath)) {
-        return undefined
-      }
-      return readFileSync(filePath, 'utf8')
-    }
-  }
-
-  /**
-   * Writes a file to either local filesystem or WebDAV.
-   */
-  private async writeFile(filename: string, content: string): Promise<void> {
-    if (this.isWebDAVMode()) {
-      const filePath = this.getFilePath(filename)
-      // Create parent directory if needed
-      const parentPath = filePath.substring(0, filePath.lastIndexOf('/'))
-      try {
-        await this.client!.createDirectory(parentPath, { recursive: true })
-      } catch (error: any) {
-        // Ignore 405 Method Not Allowed (directory already exists)
-        if (error.status !== 405) {
-          throw error
-        }
-      }
-      await this.client!.putFileContents(filePath, content)
-    } else {
-      const filePath = this.getFilePath(filename)
-      const directoryPath = dirname(filePath)
-      if (!existsSync(directoryPath)) {
-        mkdirSync(directoryPath, { recursive: true })
-      }
-      writeFileSync(filePath, content, 'utf8')
-    }
-  }
-
-  /**
-   * Gets file statistics from either local filesystem or WebDAV.
-   */
-  private async statFile(filename: string): Promise<{ timestamp: number; etag?: string } | undefined> {
-    if (this.isWebDAVMode()) {
-      try {
-        const filePath = this.getFilePath(filename)
-        const stat = await this.client!.stat(filePath)
-        return {
-          timestamp: new Date(stat.lastmod).getTime(),
-          etag: stat.etag
-        }
-      } catch (error: any) {
-        if (error.status === 404) {
-          return undefined
-        }
-        throw error
-      }
-    } else {
-      const filePath = this.getFilePath(filename)
-      if (!existsSync(filePath)) {
-        return undefined
-      }
-      const stat = statSync(filePath)
-      return {
-        timestamp: stat.mtime.getTime()
-      }
-    }
   }
 
   /**
@@ -370,34 +253,80 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
   }
 
   /**
-   * Reads a JSON file from the data directory or WebDAV.
+   * Gets the full file path for the given filename.
+   */
+  private getFilePath(filename: string): string {
+    if (!this.config) {
+      throw new Error('DataDirectorySyncAdapter not initialized.')
+    }
+
+    const basePath = this.config.target.path || ''
+    return basePath.endsWith('/') ? `${basePath}${filename}` : `${basePath}/${filename}`
+  }
+
+  /**
+   * Reads a JSON file from WebDAV.
    */
   private async readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     try {
-      const content = await this.readFile(filename)
-      if (!content) {
-        return defaultValue
-      }
+      const filePath = this.getFilePath(filename)
+      const content = await this.client!.getFileContents(filePath, { format: 'text' }) as string
       return JSON.parse(content)
     } catch (error: any) {
+      if (error.status === 404) {
+        return defaultValue
+      }
       console.warn(`Failed to read ${filename}:`, error.message)
       return defaultValue
     }
   }
 
   /**
-   * Writes a JSON file to the data directory or WebDAV.
+   * Writes a JSON file to WebDAV.
    */
   private async writeJsonFile<T>(filename: string, data: T): Promise<void> {
-    const content = JSON.stringify(data, null, 2)
-    await this.writeFile(filename, content)
+    const filePath = this.getFilePath(filename)
+    const parentPath = filePath.substring(0, filePath.lastIndexOf('/'))
+
+    try {
+      await this.client!.createDirectory(parentPath, { recursive: true })
+    } catch (error: any) {
+      if (error.status !== 405) {
+        throw error
+      }
+    }
+
+    await this.client!.putFileContents(filePath, JSON.stringify(data, null, 2))
   }
 
   /**
-   * Retrieves metadata of the remote file from the data directory or WebDAV.
+   * Gets file statistics from WebDAV.
+   */
+  private async statFile(filename: string): Promise<{ timestamp: number; etag?: string } | undefined> {
+    try {
+      const filePath = this.getFilePath(filename)
+      const stat = await this.client!.stat(filePath)
+      return {
+        timestamp: new Date(stat.lastmod).getTime(),
+        etag: stat.etag
+      }
+    } catch (error: any) {
+      if (error.status === 404) {
+        return undefined
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Retrieves metadata of the remote file from WebDAV.
    * @returns A promise that resolves with the remote metadata, or undefined if not found.
    */
   async getRemoteMetadata(): Promise<SyncMetadata | undefined> {
+    if (!this.client) {
+      throw new Error('DataDirectorySyncAdapter not initialized.')
+    }
+
     try {
       const stat = await this.statFile('collection.json')
       if (!stat) {
@@ -416,7 +345,7 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
   }
 
   /**
-   * Downloads data from the data directory or WebDAV.
+   * Downloads data from WebDAV.
    * Reads all JSON files and transforms to UTags format.
    * @returns A promise that resolves with the downloaded data and its metadata.
    */
@@ -424,6 +353,10 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
     data: string | undefined
     remoteMeta: SyncMetadata | undefined
   }> {
+    if (!this.client) {
+      throw new Error('DataDirectorySyncAdapter not initialized.')
+    }
+
     try {
       const stat = await this.statFile('collection.json')
 
@@ -463,7 +396,7 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
   }
 
   /**
-   * Uploads data to the data directory or WebDAV.
+   * Uploads data to WebDAV.
    * Transforms from UTags format and writes to individual JSON files.
    * @param data - The stringified data to upload.
    * @param expectedRemoteMeta - Optional metadata of the remote file for optimistic locking.
@@ -474,7 +407,7 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
     data: string,
     expectedRemoteMeta?: SyncMetadata
   ): Promise<SyncMetadata> {
-    if (!this.config) {
+    if (!this.client || !this.config) {
       throw new Error('DataDirectorySyncAdapter not initialized. Call init() first.')
     }
 
@@ -533,31 +466,18 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
   }
 
   /**
-   * Checks the authentication status with the data directory or WebDAV.
+   * Checks the authentication status with WebDAV.
    * @returns A promise that resolves with the AuthStatus.
    */
   async getAuthStatus(): Promise<AuthStatus> {
-    if (!this.config) {
-      return 'requires_config'
+    if (!this.client) {
+      if (!this.config?.target?.url) return 'requires_config'
+      return 'error'
     }
 
     try {
-      if (this.isWebDAVMode()) {
-        // WebDAV mode: test connection
-        await this.client!.getDirectoryContents('/')
-        return 'authenticated'
-      } else {
-        // Local file system mode
-        const directoryPath = this.getDirectoryPath()
-        if (!existsSync(directoryPath)) {
-          try {
-            mkdirSync(directoryPath, { recursive: true })
-          } catch {
-            return 'error'
-          }
-        }
-        return 'authenticated'
-      }
+      await this.client.getDirectoryContents('/')
+      return 'authenticated'
     } catch (error: any) {
       console.warn('DataDirectory auth status check failed:', error)
       if (error.status === 401) {
@@ -565,22 +485,6 @@ export class DataDirectorySyncAdapter implements SyncAdapter<
       }
       return 'error'
     }
-  }
-
-  /**
-   * @private
-   * @method getDirectoryPath
-   * @description Gets the directory path from the config.
-   * @returns {string} The directory path.
-   */
-  private getDirectoryPath(): string {
-    if (!this.directoryPath) {
-      throw new Error(
-        '[DataDirectorySyncAdapter] Adapter not properly initialized. Directory path is missing.'
-      )
-    }
-
-    return this.directoryPath
   }
 }
 

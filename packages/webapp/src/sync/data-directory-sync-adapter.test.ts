@@ -4,38 +4,17 @@ import type { BookmarksStore } from '../types/bookmarks.js'
 import type { SyncServiceConfig } from './types.js'
 
 // Mock WebDAV client
+const mockClient = {
+  getDirectoryContents: vi.fn().mockResolvedValue([]),
+  stat: vi.fn(),
+  getFileContents: vi.fn(),
+  putFileContents: vi.fn(),
+  createDirectory: vi.fn(),
+}
+
 vi.mock('../lib/webdav-client.js', () => ({
-  createClient: vi.fn(() => ({
-    getDirectoryContents: vi.fn().mockResolvedValue([]),
-    stat: vi.fn(),
-    getFileContents: vi.fn(),
-    putFileContents: vi.fn(),
-    createDirectory: vi.fn(),
-  })),
+  createClient: vi.fn(() => mockClient),
 }))
-
-// Mock fs module
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>()
-  return {
-    ...actual,
-    readFileSync: vi.fn(),
-    writeFileSync: vi.fn(),
-    statSync: vi.fn(),
-    existsSync: vi.fn(),
-    mkdirSync: vi.fn(),
-  }
-})
-
-// Mock path module
-vi.mock('path', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('path')>()
-  return {
-    ...actual,
-    dirname: vi.fn((path) => path.substring(0, path.lastIndexOf('/'))),
-    join: vi.fn((...paths) => paths.join('/')),
-  }
-})
 
 describe('transformToUtags', () => {
   it('should transform Tide Mark data to UTags format', () => {
@@ -278,11 +257,25 @@ describe('DataDirectorySyncAdapter - WebDAV mode', () => {
         path: '/tide-mark'
       }
     }
+    // Reset mock functions before each test
+    mockClient.getDirectoryContents.mockResolvedValue([])
+    mockClient.stat.mockReset()
+    mockClient.getFileContents.mockReset()
+    mockClient.putFileContents.mockReset()
+    mockClient.createDirectory.mockReset()
   })
 
   it('should initialize in WebDAV mode', async () => {
     await adapter.init(config)
     expect(adapter.getConfig()).toEqual(config)
+  })
+
+  it('should throw error if URL is not provided', async () => {
+    const configWithoutUrl = {
+      ...config,
+      target: { path: '/tide-mark' }
+    }
+    await expect(adapter.init(configWithoutUrl)).rejects.toThrow('WebDAV URL must be provided')
   })
 
   it('should handle WebDAV authentication', async () => {
@@ -292,12 +285,13 @@ describe('DataDirectorySyncAdapter - WebDAV mode', () => {
   })
 
   it('should download data from WebDAV', async () => {
-    // Mock the WebDAV client methods directly
-    const mockStat = vi.fn().mockResolvedValue({
+    await adapter.init(config)
+    
+    mockClient.stat.mockResolvedValue({
       lastmod: new Date().toISOString(),
       etag: 'test-etag'
     })
-    const mockGetFileContents = vi.fn()
+    mockClient.getFileContents
       .mockResolvedValueOnce('[]') // tags
       .mockResolvedValueOnce('[]') // folders
       .mockResolvedValueOnce('[]') // collections
@@ -312,42 +306,19 @@ describe('DataDirectorySyncAdapter - WebDAV mode', () => {
         viewMode: 'card-simple'
       })) // info
 
-    // Update the mock to return our mocked methods
-    const webdavClientModule = await import('../lib/webdav-client.js')
-    vi.mocked(webdavClientModule.createClient).mockReturnValue({
-      getDirectoryContents: vi.fn().mockResolvedValue([]),
-      stat: mockStat,
-      getFileContents: mockGetFileContents,
-      putFileContents: vi.fn(),
-      createDirectory: vi.fn(),
-    } as any)
-
-    await adapter.init(config)
     const result = await adapter.download()
     expect(result.data).toBeDefined()
   })
 
   it('should upload data to WebDAV', async () => {
-    // Mock the WebDAV client methods directly
-    const mockStat = vi.fn().mockResolvedValue({
+    await adapter.init(config)
+    
+    mockClient.stat.mockResolvedValue({
       lastmod: new Date().toISOString(),
       etag: 'test-etag'
     })
-    const mockGetFileContents = vi.fn().mockResolvedValue('[]') // existing data
-    const mockPutFileContents = vi.fn().mockResolvedValue(undefined)
-    const mockCreateDirectory = vi.fn().mockResolvedValue(undefined)
+    mockClient.getFileContents.mockResolvedValue('[]') // existing data
 
-    // Update the mock to return our mocked methods
-    const webdavClientModule = await import('../lib/webdav-client.js')
-    vi.mocked(webdavClientModule.createClient).mockReturnValue({
-      getDirectoryContents: vi.fn().mockResolvedValue([]),
-      stat: mockStat,
-      getFileContents: mockGetFileContents,
-      putFileContents: mockPutFileContents,
-      createDirectory: mockCreateDirectory,
-    } as any)
-
-    await adapter.init(config)
     const testData: BookmarksStore = {
       data: {},
       meta: {
@@ -359,5 +330,11 @@ describe('DataDirectorySyncAdapter - WebDAV mode', () => {
 
     const result = await adapter.upload(JSON.stringify(testData))
     expect(result.timestamp).toBeDefined()
+  })
+
+  it('should return requires_config when config is missing', async () => {
+    const newAdapter = new DataDirectorySyncAdapter()
+    const authStatus = await newAdapter.getAuthStatus()
+    expect(authStatus).toBe('requires_config')
   })
 })
