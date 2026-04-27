@@ -135,27 +135,40 @@ export class WebDAVSyncAdapter implements SyncAdapter<
         const syncSettingsFilePath = parentPath + '/sync-settings.json'
         console.log(`WebDAV download: Checking for sync settings at ${syncSettingsFilePath}`)
         
-        const syncSettingsStat = await this.client.stat(syncSettingsFilePath)
-        if (syncSettingsStat) {
-          const syncSettingsContents = (await this.client.getFileContents(syncSettingsFilePath, {
-            format: 'text',
-          })) as string
-          
-          console.log('WebDAV download: Sync settings found, updating local settings')
-          try {
-            const { syncConfigStore } = await import('../stores/sync-config-store.js')
-            const syncSettings = JSON.parse(syncSettingsContents)
-            syncConfigStore.set(syncSettings)
-            console.log('WebDAV download: Sync settings updated successfully')
-          } catch (parseError) {
-            console.error('WebDAV download: Failed to parse sync settings:', parseError)
+        try {
+          const syncSettingsStat = await this.client.stat(syncSettingsFilePath)
+          if (syncSettingsStat) {
+            console.log(`WebDAV download: Sync settings file found - Size: ${syncSettingsStat.size} bytes, Last modified: ${new Date(syncSettingsStat.lastmod).toISOString()}`)
+            
+            const syncSettingsContents = (await this.client.getFileContents(syncSettingsFilePath, {
+              format: 'text',
+            })) as string
+            
+            console.log(`WebDAV download: Sync settings content length: ${syncSettingsContents.length} bytes`)
+            console.log(`WebDAV download: Sync settings content preview: ${syncSettingsContents.substring(0, 500)}...`)
+            
+            console.log('WebDAV download: Updating local sync settings')
+            try {
+              const { syncConfigStore } = await import('../stores/sync-config-store.js')
+              const syncSettings = JSON.parse(syncSettingsContents)
+              syncConfigStore.set(syncSettings)
+              console.log('WebDAV download: Sync settings updated successfully')
+            } catch (parseError) {
+              console.error('WebDAV download: Failed to parse sync settings:', parseError)
+            }
+          } else {
+            console.log(`WebDAV download: Sync settings file not found at ${syncSettingsFilePath}`)
+          }
+        } catch (statError: any) {
+          if (statError.status === 404 || statError.status === 409) {
+            console.log(`WebDAV download: Sync settings file does not exist at ${syncSettingsFilePath} (status: ${statError.status})`)
+          } else {
+            console.error(`WebDAV download: Error checking sync settings file:`, statError)
           }
         }
       } catch (syncSettingsError: any) {
         // Log error but don't fail the entire download
-        if (syncSettingsError.status !== 404 && syncSettingsError.status !== 409) {
-          console.error('WebDAV download: Failed to download sync settings:', syncSettingsError)
-        }
+        console.error(`WebDAV download: Failed to process sync settings:`, syncSettingsError)
       }
 
       return {
@@ -302,14 +315,26 @@ export class WebDAVSyncAdapter implements SyncAdapter<
         
         // Create sync settings file path in the same directory as bookmarks.json
         const syncSettingsFilePath = parentPath + '/sync-settings.json'
-        console.log(`WebDAV upload: Uploading sync settings to ${syncSettingsFilePath}`)
+        console.log(`WebDAV upload: Preparing to upload sync settings to ${syncSettingsFilePath}`)
+        console.log(`WebDAV upload: Sync settings content: ${JSON.stringify(filteredSyncSettings, null, 2).substring(0, 500)}...`)
         
         // Upload sync settings without optimistic locking (always overwrite)
         await this.client.putFileContents(syncSettingsFilePath, JSON.stringify(filteredSyncSettings, null, 2))
-        console.log('WebDAV upload: Sync settings uploaded successfully')
+        console.log(`WebDAV upload: Sync settings file created/updated successfully at ${syncSettingsFilePath}`)
+        
+        // Verify the file was created by checking its existence
+        try {
+          const stat = await this.client.stat(syncSettingsFilePath)
+          if (stat) {
+            console.log(`WebDAV upload: Sync settings file verification successful - Size: ${stat.size} bytes, Last modified: ${new Date(stat.lastmod).toISOString()}`)
+          }
+        } catch (verifyError) {
+          console.warn(`WebDAV upload: Failed to verify sync settings file existence:`, verifyError)
+        }
       } catch (syncSettingsError: any) {
         // Log error but don't fail the entire upload
-        console.error('WebDAV upload: Failed to upload sync settings:', syncSettingsError)
+        console.error(`WebDAV upload: Failed to upload sync settings to ${parentPath}/sync-settings.json:`, syncSettingsError)
+        console.error(`WebDAV upload: Error details:`, syncSettingsError.message, syncSettingsError.status)
       }
 
       // After successful upload, get the new metadata (ETag and Last-Modified)
