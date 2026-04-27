@@ -69,7 +69,7 @@ function transformToUtags(data: TideMarkData): BookmarksStore {
   const bookmarksData: Record<string, { tags: string[]; meta: any }> = {}
 
   data.collections.forEach((collection) => {
-    const tagNames = collection.tagIds
+    const tagNames = (collection.tagIds || [])
       .map((id) => tagIdToName.get(id))
       .filter((name): name is string => name !== undefined)
 
