@@ -293,11 +293,19 @@ export class WebDAVSyncAdapter implements SyncAdapter<
       try {
         // Import syncConfigStore dynamically to avoid circular dependencies
         const { syncConfigStore } = await import('../stores/sync-config-store.js')
-        const syncSettings = syncConfigStore.subscribe((value) => value)()
+        // Import get function from svelte
+        const { get } = await import('svelte/store')
+        const syncSettings = get(syncConfigStore);
+        
+        // Check if syncSettings is defined
+        if (!syncSettings) {
+          console.error('WebDAV upload: syncSettings is undefined');
+          return;
+        }
         
         // Filter out dynamic sync state information, only keep user configuration
         const filteredSyncSettings = {
-          syncServices: syncSettings.syncServices.map(service => {
+          syncServices: (syncSettings.syncServices || []).map(service => {
             // Only keep user-configured fields, exclude sync state fields
             const { 
               id, name, type, credentials, target, scope, enabled, 
