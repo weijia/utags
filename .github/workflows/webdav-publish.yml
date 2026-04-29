@@ -37,6 +37,65 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      - name: Get git tag
+        id: get_tag
+        run: |
+          # Check if this is a tag push
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "is_tag_push=true" >> $GITHUB_OUTPUT
+          else
+            # Try to get the latest tag from the current commit
+            TAG=$(git describe --tags --exact-match 2>/dev/null || git describe --tags 2>/dev/null || echo "")
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "is_tag_push=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Tag found: ${{ steps.get_tag.outputs.tag }}"
+
+      - name: Update version with build time and tag
+        id: version
+        run: |
+          # Get current timestamp in format YYYYMMDDHHmm
+          TIMESTAMP=$(date -u +'%Y%m%d%H%M')
+          echo "Current timestamp: $TIMESTAMP"
+          
+          # Get tag info
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          IS_TAG="${{ steps.get_tag.outputs.is_tag_push }}"
+          
+          # Determine version suffix
+          if [ "$IS_TAG" = "true" ] && [ -n "$TAG" ]; then
+            # If this is a tag push, use the tag as version with timestamp
+            VERSION="${TAG}-${TIMESTAMP}"
+          elif [ -n "$TAG" ]; then
+            # If there's a tag, include it with timestamp
+            # Remove 'v' prefix if present
+            TAG_CLEAN=${TAG#v}
+            VERSION="${TAG_CLEAN}-${TIMESTAMP}"
+          else
+            # No tag, just use timestamp
+            VERSION="${TIMESTAMP}"
+          fi
+          
+          echo "New version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Update version in package.json for webapp
+          cd packages/webapp
+          echo "Current version in package.json:"
+          grep '"version"' package.json
+          
+          # Use node to update package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          
+          echo "Updated version in package.json:"
+          grep '"version"' package.json
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
