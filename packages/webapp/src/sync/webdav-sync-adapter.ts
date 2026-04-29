@@ -149,9 +149,32 @@ export class WebDAVSyncAdapter implements SyncAdapter<
             
             console.log('WebDAV download: Updating local sync settings')
             try {
-              const { syncConfigStore } = await import('../stores/sync-config-store.js')
+              const { syncConfigStore, get } = await import('../stores/sync-config-store.js')
               const syncSettings = JSON.parse(syncSettingsContents)
-              syncConfigStore.set(syncSettings)
+              
+              // Get current local sync settings to preserve browserExtension services
+              const localSyncSettings = get(syncConfigStore)
+              
+              // Preserve local browserExtension services that won't be synced from remote
+              const remoteServiceIds = new Set((syncSettings.syncServices || []).map(s => s.id))
+              const localBrowserExtensionServices = (localSyncSettings.syncServices || []).filter(
+                service => service.type === 'browserExtension'
+              )
+              
+              // Merge: use remote services + local browserExtension services
+              const mergedSyncServices = [
+                ...(syncSettings.syncServices || []),
+                ...localBrowserExtensionServices
+              ]
+              
+              const mergedSyncSettings = {
+                ...syncSettings,
+                syncServices: mergedSyncServices
+              }
+              
+              console.log(`WebDAV download: Merged sync settings - Remote services: ${syncSettings.syncServices?.length || 0}, Local browserExtension services preserved: ${localBrowserExtensionServices.length}`)
+              
+              syncConfigStore.set(mergedSyncSettings)
               console.log('WebDAV download: Sync settings updated successfully')
             } catch (parseError) {
               console.error('WebDAV download: Failed to parse sync settings:', parseError)
@@ -304,6 +327,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
         }
         
         // Filter out dynamic sync state information, only keep user configuration
+        // Also filter out browserExtension type services as they contain browser-specific information
         const filteredSyncSettings = {
           syncServices: (syncSettings.syncServices || []).map(service => {
             // Only keep user-configured fields, exclude sync state fields
@@ -317,7 +341,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               autoSyncEnabled, autoSyncInterval, autoSyncOnChanges, autoSyncDelayOnChanges,
               mergeStrategy
             };
-          }),
+          }).filter(service => service.type !== 'browserExtension'),
           activeSyncServiceId: syncSettings.activeSyncServiceId
         };
         
