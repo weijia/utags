@@ -60,12 +60,53 @@ export default (() => {
         $('[data-main-left]')?.classList.add('utags_no_hide')
       }
 
-      const key = getPostUrl(location.href)
-      if (key) {
-        const element = $('[data-main-left] h1')
-        if (element) {
-          setUtagsAttributes(element, { key, type: 'post' })
-          addVisited(key)
+      {
+        const key = getPostUrl(location.href)
+        if (key) {
+          const element = $('[data-main-left] h1')
+          if (element) {
+            const title = getTrimmedTitle(element)
+            if (title) {
+              setUtagsAttributes(element, { key, type: 'post' })
+              addVisited(key)
+
+              const commentElements = $$('article[id]')
+              for (const element of commentElements) {
+                const id = element.id.replace('comment-', '')
+                const target = $('time', element)
+                if (!id || !target) {
+                  continue
+                }
+
+                const commentkey = `${key}?commentId=${id}`
+                const formattedTitle = `回复 >> ${title}`
+                const description = getTrimmedTitle(
+                  $('section div', element) || element
+                )
+                const formattedDescription =
+                  description.length > 1000
+                    ? description.slice(0, 1000)
+                    : description
+                setUtagsAttributes(target, {
+                  key: commentkey,
+                  title: formattedTitle,
+                  description: formattedDescription,
+                  type: 'comment',
+                })
+              }
+            }
+          }
+        }
+      }
+
+      {
+        const key = getUserProfileUrl(location.href)
+        if (key) {
+          // User profile header
+          const element = $('[data-main-left] span.font-bold.text-xl')
+          if (element) {
+            setUtagsAttributes(element, { key, type: 'user' })
+          }
         }
       }
     },
@@ -83,9 +124,9 @@ export default (() => {
       // Post list
       '[data-main-left] ul.card li a:not(time + div a):not(.utags_text_tag)',
       // Comments
-      '[data-main-left].utags_no_hide > div > div.card article address > div > a[rel="author"]',
+      '[data-main-left].utags_no_hide > div > div.card article address > div > a[href^="/user/"]',
       // Comments Flat view
-      '[data-main-left]:not(.utags_no_hide) > div > div.card article address > div > a[rel="author"]',
+      '[data-main-left]:not(.utags_no_hide) > div > div.card article address > div > a[href^="/user/"]',
       // Right sidebar
       '[data-right-sidebar] .card-body > h4 + div > div a',
     ],
@@ -94,7 +135,7 @@ export default (() => {
         return true
       }
 
-      let key = getPostUrl(href)
+      let key = getPostUrl(href, true)
       if (key) {
         const title = getTrimmedTitle(element)
         if (!title) {
@@ -102,6 +143,11 @@ export default (() => {
         }
 
         if (title === '最后回复') {
+          return false
+        }
+
+        // 动态 > 回复数量图标
+        if ($('svg', element) && /\d+/.test(title)) {
           return false
         }
 
@@ -117,6 +163,12 @@ export default (() => {
         const title = getTrimmedTitle(element)
         if (!title) {
           return false
+        }
+
+        // 帖子列表 > 作者
+        if (element.matches('[data-main-left] ul.card li div.truncate > a')) {
+          element.dataset.utags_target_selector =
+            '[data-main-left] ul.card li div.truncate'
         }
 
         const meta = { type: 'user', title }
@@ -141,6 +193,10 @@ export default (() => {
       'a[href^="/post/hot/"]',
       'a[href$="/history"]',
       'a[href^="/auth"]',
+      // 通知页面
+      'input[type="checkbox"] + div',
+      // 用户卡片
+      '[role="dialog"]',
     ],
     postProcess() {
       const theme = doc.documentElement.dataset.theme || ''

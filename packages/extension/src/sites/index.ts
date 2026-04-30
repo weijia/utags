@@ -90,6 +90,9 @@ type Site = {
     hostname: string
   ) => string | { url: string; domainChanged: boolean }
   getStyle?: () => string
+  // Update custom nodes. Run at every scan completed
+  // 例如，给自定义节点添加 data-utags_link 属性
+  // 先执行默认扫描，第一次默认扫描结束以后，添加 data-utags_link 属性，触发第二次扫描
   preProcess?: () => void
   postProcess?: () => void
 }
@@ -149,7 +152,9 @@ const sites: Site[] = [
   misskon_com,
 ]
 
-const BASE_EXCLUDE_SELECTOR = '[data-utags_exclude],svg'
+// Exclude `svg a` from scanning to avoid unexpected matches. https://github.com/utags/utags/issues/148
+// Exclude nested links (`a a`) from scanning to avoid unexpected matches on pages modified by extensions (e.g. V2EX Polish). https://github.com/utags/utags/issues/157
+const BASE_EXCLUDE_SELECTOR = '[data-utags_exclude],a a,svg'
 const getCanonicalUrlFunctionList = [defaultSite, ...sites]
   .map((site) => site.getCanonicalUrl)
   .filter((v) => typeof v === 'function')
@@ -245,10 +250,6 @@ export function getCurrentSiteStyle(): string | undefined {
 }
 
 export function getListNodes() {
-  if (typeof currentSite.preProcess === 'function') {
-    currentSite.preProcess()
-  }
-
   // Style injection is centrally managed by style-manager
 
   return listNodesSelector ? $$(listNodesSelector) : []
@@ -385,6 +386,11 @@ export function updateElementUtagsMeta(
     meta.type = type
   }
 
+  const description = element.dataset.utags_description
+  if (description) {
+    meta.description = description
+  }
+
   setElementUtags(element, {
     key,
     originalKey,
@@ -467,56 +473,7 @@ const addMatchedNodes = (matchedNodesSet: Set<UtagsHTMLElement>) => {
   }
 }
 
-export function matchedNodes() {
-  // console.time('matchedNodes')
-  // const matchedNodesSet = new Set<UtagsHTMLElement>()
-
-  // try {
-  //   addMatchedNodes(matchedNodesSet)
-  // } catch (error) {
-  //   console.error(error)
-  // }
-
-  // try {
-  //   const currentPageLink = $('#utags_current_page_link') as UtagsHTMLElement
-  //   if (currentPageLink) {
-  //     const key = getCanonicalUrl(currentPageLink.href)
-  //     if (key) {
-  //       const title = getTrimmedTitle(currentPageLink)
-  //       const description = currentPageLink.dataset.utags_description
-  //       // Build meta object only with properties that have values
-  //       const meta: { title?: string; description?: string } = {}
-  //       if (title) meta.title = title
-  //       if (description) meta.description = description
-
-  //       setElementUtags(currentPageLink, {
-  //         key,
-  //         meta,
-  //       })
-  //       matchedNodesSet.add(currentPageLink)
-  //     }
-  //   }
-  // } catch (error) {
-  //   console.error(error)
-  // }
-
-  // 添加 data-utags_primary_link 属性强制允许使用 utags
-  // const array = $$("[data-utags_primary_link]") as HTMLAnchorElement[]
-  // for (const element of array) {
-  //   if (!element.utags) {
-  //     const key = getCanonicalUrl(element.href)
-  //     const title = element.textContent!
-  //     const meta = {}
-  //     if (!isUrl(title)) {
-  //       meta.title = title
-  //     }
-
-  //     setUtags(element, key, meta)
-  //   }
-
-  //   matchedNodesSet.add(element)
-  // }
-
+export function postProcess() {
   if (typeof currentSite.postProcess === 'function') {
     try {
       currentSite.postProcess()
@@ -524,37 +481,6 @@ export function matchedNodes() {
       console.error(error)
     }
   }
-
-  // Debug
-  // if (0) {
-  //   let list = uniq(
-  //     $$("a[href]:not(.utags_text_tag)")
-  //       .map((v: HTMLAnchorElement) => v.href)
-  //       .sort()
-  //       .filter((v) => v && !v.includes(hostname))
-  //   )
-  //   console.log(list)
-
-  //   list = uniq(
-  //     $$("a[href]:not(.utags_text_tag)")
-  //       .map((v: HTMLAnchorElement) => v.href)
-  //       .sort()
-  //       .filter((v) => v?.includes(hostname))
-  //   )
-  //   console.log(list)
-
-  //   list = uniq(
-  //     $$("a[href]:not(.utags_text_tag)")
-  //       .map((v: HTMLAnchorElement) => v.href)
-  //       .sort()
-  //       .filter((v) => v?.includes(hostname))
-  //       .filter((v) => v.includes("?"))
-  //   )
-  //   console.log(list)
-  // }
-
-  // console.timeEnd('matchedNodes')
-  return []
 }
 
 export type ScanDomOptions = {
@@ -630,7 +556,7 @@ function createUTagsScannerOptions(
 
         if (!debug) {
           // eslint-disable-next-line n/prefer-global/process
-          if (process.env.PLASMO_TAG !== 'prod') {
+          if (process.env.PLASMO_TAG === 'dev') {
             htmlNode.style.outline = '2px solid gold'
           }
 
@@ -650,7 +576,7 @@ function createUTagsScannerOptions(
       } else if (action === 'delete') {
         cleanupUtags(htmlNode)
         // eslint-disable-next-line n/prefer-global/process
-        if (process.env.PLASMO_TAG !== 'prod' && !debug)
+        if (process.env.PLASMO_TAG === 'dev' && !debug)
           htmlNode.style.outline = ''
       }
     },
@@ -670,6 +596,16 @@ export function scanDom(options?: ScanDomOptions) {
       `Matches: ${list.length} | ActiveTime: ${stats.pureScanDuration.toFixed(2)}ms`
     )
     currentResult = list
+
+    // 预处理节点，给自定义节点添加 data-utags_link 属性
+    // 先执行默认扫描，第一次默认扫描结束以后，添加 data-utags_link 属性，触发第二次扫描
+    if (typeof currentSite.preProcess === 'function') {
+      try {
+        currentSite.preProcess()
+      } catch (error) {
+        console.error(error)
+      }
+    }
 
     if (options?.onScanCompleted) {
       options.onScanCompleted(list as HTMLElement[])

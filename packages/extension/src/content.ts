@@ -83,10 +83,9 @@ import {
 import { setupWebappBridge } from './modules/webapp-bridge'
 import {
   getCanonicalUrl,
-  getConditionNodes,
   getListNodes,
   isScannerBusy,
-  matchedNodes,
+  postProcess,
   scanDom,
   updateMatchedNodesSelector,
   type ScanDomOptions,
@@ -306,7 +305,7 @@ const getSettingsTable = (): SettingsTable => {
     emojiTags: {
       title: i('settings.emojiTags'),
       defaultValue:
-        '★, ★★, ★★★, ☆, ☆☆, ☆☆☆, 👍, 👎, ❤️, ⭐, 🌟, 🔥, 💩, ⚠️, 💯, 👏, 🐷, 📌, 📍, 🏆, 💎, 💡, 🤖, 📔, 📖, 📚, 📜, 📕, 📗, 🧰, ⛔, 🚫, 🔴, 🟠, 🟡, 🟢, 🔵, 🟣, ❗, ❓, ✅, ❌',
+        '★, ★★, ★★★, ☆, ☆☆, ☆☆☆, 👍, 👎, ❤️, ⭐, 🌟, 🔥, 💩, ⚠️, 💯, 👏, 👀, 🐷, 📌, 📍, 🏆, 💎, 💡, 🤖, 📔, 📖, 📚, 📜, 📕, 📗, 🧰, ⛔, 🚫, 🔴, 🟠, 🟡, 🟢, 🔵, 🟣, ❗, ❓, ✅, ❌',
       placeholder: '👍, 👎',
       type: 'textarea',
       group: groupNumber,
@@ -412,11 +411,11 @@ function updateDocumentElementAttributes() {
   if (getSettingsValue('showHidedItems')) {
     if (!hasClass(doc.documentElement, 'utags_no_hide')) {
       addClass(doc.documentElement, 'utags_no_hide')
-      updateTagPositionForAllTargets()
+      updateTagPositionForAllTaggedTargets()
     }
   } else if (hasClass(doc.documentElement, 'utags_no_hide')) {
     removeClass(doc.documentElement, 'utags_no_hide')
-    updateTagPositionForAllTargets()
+    updateTagPositionForAllTaggedTargets()
   }
 
   if (getSettingsValue('noOpacityEffect')) {
@@ -701,6 +700,34 @@ function ensureUtagsMouseoverHandler(element: HTMLElement) {
   })
 }
 
+function getUtagsTargetElementByElement(element: HTMLElement): HTMLElement {
+  if (element.dataset.utags_target_selector) {
+    return (
+      $(element.dataset.utags_target_selector, element) ||
+      element.closest(element.dataset.utags_target_selector) ||
+      element
+    )
+  }
+
+  return element
+}
+
+function appendUtagsToElement(
+  element: HTMLElement,
+  utagsUl: HTMLElement | undefined
+) {
+  if (!utagsUl) {
+    return
+  }
+
+  const target = getUtagsTargetElementByElement(element)
+  if (!(target instanceof HTMLAnchorElement)) {
+    setAttribute(target, 'data-utags_node_type', 'link')
+  }
+
+  target.after(utagsUl)
+}
+
 function appendTagsToPage(
   element: HTMLElement,
   key: string,
@@ -724,7 +751,7 @@ function appendTagsToPage(
       key === getAttribute(existingUtagsUl, 'data-utags_key')
     ) {
       if (!existingUtagsUl.isConnected) {
-        element.after(existingUtagsUl)
+        appendUtagsToElement(element, existingUtagsUl)
         ensureUtagsUlTracked(existingUtagsUl)
       }
 
@@ -798,19 +825,20 @@ function appendTagsToPage(
       bindScrollEvent(element)
     }
   } else {
-    element.after(utagsUl)
+    appendUtagsToElement(element, utagsUl)
   }
 
   setAttribute(element, 'data-utags', tags.join(','))
   /* Fix v2ex polish start */
   // 为了防止阻塞渲染页面，延迟执行
-  createTimeout(() => {
-    const style = getComputedStyle(element)
-    const zIndex = style.zIndex
-    if (zIndex && zIndex !== 'auto') {
-      setStyle(utagsUl, { zIndex })
-    }
-  }, 200)
+  // 20260327: 删掉此逻辑
+  // createTimeout(() => {
+  //   const style = getComputedStyle(element)
+  //   const zIndex = style.zIndex
+  //   if (zIndex && zIndex !== 'auto') {
+  //     setStyle(utagsUl, { zIndex })
+  //   }
+  // }, 200)
   /* Fix v2ex polish end */
 }
 
@@ -890,12 +918,6 @@ function processNodeForDisplay(node: HTMLElement) {
   const { key, tags, meta } = result
 
   appendTagsToPage(node, key, tags, meta)
-
-  if (tags.length > 0) {
-    setTimeout(() => {
-      updateTagPosition(node)
-    })
-  }
 }
 
 configureScannedNodeProcessor(processNodeForDisplay)
@@ -916,35 +938,11 @@ async function displayTags() {
   // console.debug("displayTags")
   const listNodes = getListNodes()
   for (const node of listNodes) {
-    // Flag list nodes first
-    node.dataset.utags_list_node = ''
+    if (node.dataset.utags_list_node === undefined) {
+      // Flag list nodes first
+      node.dataset.utags_list_node = ''
+    }
   }
-
-  if (DEBUG) {
-    console.debug('before matchedNodes')
-  }
-
-  // Display tags for matched components on matched pages
-  const nodes = matchedNodes()
-  if (DEBUG) {
-    console.debug('after matchedNodes', nodes.length)
-  }
-
-  for (const node of nodes) {
-    processNodeForDisplay(node as HTMLElement)
-  }
-
-  if (DEBUG) {
-    console.debug('after appendTagsToPage', getRegisteredUtagsUlCount())
-  }
-
-  // const conditionNodes = getConditionNodes()
-  // for (const node of conditionNodes) {
-  //   if (getAttribute(node, 'data-utags')) {
-  //     // Flag condition nodes
-  //     node.dataset.utags_condition_node = ''
-  //   }
-  // }
 
   for (const node of listNodes) {
     const conditionNodes = $$('[data-utags_condition_node]', node)
@@ -967,15 +965,25 @@ async function displayTags() {
       tagsArray.push(node.dataset.utags)
     }
 
+    let listNodeValue: string
     if (tagsArray.length === 1) {
-      node.dataset.utags_list_node = ',' + tagsArray[0] + ','
+      listNodeValue = ',' + tagsArray[0] + ','
     } else if (tagsArray.length > 1) {
-      node.dataset.utags_list_node =
-        ',' + uniq(tagsArray.join(',').split(',')).join(',') + ','
+      listNodeValue = ',' + uniq(tagsArray.join(',').split(',')).join(',') + ','
+    } else {
+      listNodeValue = ''
+    }
+
+    if (node.dataset.utags_list_node !== listNodeValue) {
+      node.dataset.utags_list_node = listNodeValue
     }
   }
 
   // cleanUnusedUtags()
+
+  updateTagPositionForAllTaggedTargets()
+
+  postProcess()
 
   if (DEBUG) {
     console.debug('end of displayTags')
@@ -1109,10 +1117,18 @@ function updateTagPosition(element: HTMLElement) {
         element.style.marginRight = newMargin + 'px'
       }
     }
+  } else {
+    // Ensure `utagsUl` stays immediately after the target element, even if new nodes were inserted between them.
+    const previousElementSibling = utagsUl.previousElementSibling
+    const targetElement = getUtagsTargetElementByElement(element)
+    if (previousElementSibling !== targetElement) {
+      appendUtagsToElement(element, utagsUl)
+      ensureUtagsUlTracked(utagsUl)
+    }
   }
 
   if (!utagsUl.isConnected) {
-    element.after(utagsUl)
+    appendUtagsToElement(element, utagsUl)
     ensureUtagsUlTracked(utagsUl)
   }
 
@@ -1125,7 +1141,12 @@ function updateTagPosition(element: HTMLElement) {
     return
   }
 
-  if (element.dataset.utags_position_selector) {
+  if (element.dataset.utags_target_selector) {
+    element =
+      $(element.dataset.utags_target_selector, element) ||
+      element.closest(element.dataset.utags_target_selector) ||
+      element
+  } else if (element.dataset.utags_position_selector) {
     element =
       $(element.dataset.utags_position_selector, element) ||
       element.closest(element.dataset.utags_position_selector) ||
@@ -1381,13 +1402,89 @@ function updateTagPosition(element: HTMLElement) {
   element.dataset.utags_fit_content = '0'
 }
 
+const tagPositionUpdateQueue: HTMLElement[] = []
+const tagPositionUpdateSet = new Set<HTMLElement>()
+let isProcessingTagPositionQueue = false
+
+function takeTagPositionTargetFromQueue() {
+  const target = tagPositionUpdateQueue.shift()
+  if (target) {
+    tagPositionUpdateSet.delete(target)
+  }
+
+  return target
+}
+
+function hasTagPositionTargetsInQueue() {
+  return tagPositionUpdateQueue.length > 0
+}
+
+function processTagPositionUpdatesIdle(deadline: IdleDeadline) {
+  while (
+    deadline.timeRemaining() > 1 &&
+    !doc.hidden &&
+    hasTagPositionTargetsInQueue()
+  ) {
+    const target = takeTagPositionTargetFromQueue()
+    if (!target) {
+      break
+    }
+
+    if (!target.isConnected) {
+      continue
+    }
+
+    updateTagPosition(target)
+  }
+
+  if (hasTagPositionTargetsInQueue()) {
+    requestIdleCallback(processTagPositionUpdatesIdle)
+    return
+  }
+
+  isProcessingTagPositionQueue = false
+}
+
+function scheduleTagPositionUpdates() {
+  if (isProcessingTagPositionQueue || !hasTagPositionTargetsInQueue()) {
+    return
+  }
+
+  isProcessingTagPositionQueue = true
+  requestIdleCallback(processTagPositionUpdatesIdle)
+}
+
+function enqueueTagPositionUpdate(target: HTMLElement) {
+  if (tagPositionUpdateSet.has(target)) {
+    return
+  }
+
+  tagPositionUpdateSet.add(target)
+  tagPositionUpdateQueue.push(target)
+  scheduleTagPositionUpdates()
+}
+
 function updateTagPositionForAllTargets() {
   if (lastScannerResult.length === 0) {
     return
   }
 
   for (const target of lastScannerResult) {
-    updateTagPosition(target)
+    enqueueTagPositionUpdate(target)
+  }
+}
+
+function updateTagPositionForAllTaggedTargets() {
+  if (lastScannerResult.length === 0) {
+    return
+  }
+
+  for (const target of lastScannerResult) {
+    if (!target.dataset.utags) {
+      continue
+    }
+
+    enqueueTagPositionUpdate(target)
   }
 }
 
@@ -1667,6 +1764,7 @@ if (
       enqueueScannedNode(node)
     },
     onScanCompleted(nodes) {
+      console.debug('Scan completed', nodes.length)
       lastScannerResult = nodes
     },
   })

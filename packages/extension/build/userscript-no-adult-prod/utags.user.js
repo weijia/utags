@@ -16,7 +16,7 @@
 // @namespace            https://github.com/utags
 // @homepageURL          https://github.com/utags/utags#readme
 // @supportURL           https://github.com/utags/utags/issues
-// @version              0.32.3
+// @version              0.34.2
 // @description          Enhance your browsing experience by adding custom tags and notes to users, posts, and videos across the web. Perfect for organizing content, identifying users, and filtering out unwanted posts. Also functions as a modern bookmark management tool. Supports 100+ popular websites including X (Twitter), Reddit, Facebook, Threads, Instagram, YouTube, TikTok, GitHub, Hacker News, Greasy Fork, pixiv, Twitch, and many more.
 // @description:zh-CN    为网页上的用户、帖子、视频添加自定义标签和备注，让你的浏览体验更加个性化和高效。轻松识别用户、整理内容、过滤无关信息。同时也是一个现代化的书签管理工具。支持 100+ 热门网站，包括 V2EX、X (Twitter)、YouTube、TikTok、Reddit、GitHub、B站、抖音、小红书、知乎、掘金、豆瓣、吾爱破解、pixiv、LINUX DO、小众软件、NGA、BOSS直聘等。
 // @description:zh-HK    為網頁上的用戶、帖子、視頻添加自定義標籤和備註，讓你的瀏覽體驗更加個性化和高效。輕鬆識別用戶、整理內容、過濾無關信息。同時也是一個現代化的書籤管理工具。支持 100+ 熱門網站，包括 X (Twitter)、Reddit、Facebook、Instagram、YouTube、TikTok、GitHub、Hacker News、Greasy Fork、pixiv、Twitch 等。
@@ -519,7 +519,7 @@
   var tt = globalThis.trustedTypes
   var escapeHTMLPolicy =
     tt !== void 0 && typeof tt.createPolicy === "function"
-      ? tt.createPolicy("beuEscapePolicy", {
+      ? tt.createPolicy("dompurify", {
           createHTML: (string) => string,
         })
       : void 0
@@ -3648,9 +3648,6 @@
   function unregisterUtagsUl(ul) {
     utagsUlSet.delete(ul)
   }
-  function getRegisteredUtagsUlCount() {
-    return utagsUlSet.size
-  }
   function clearUtagsUlRegistry() {
     utagsUlSet.clear()
   }
@@ -3893,7 +3890,7 @@
     if (!element || !(element instanceof HTMLElement)) {
       return
     }
-    const { key, title, type } = attributes
+    const { key, title, type, description } = attributes
     if (key && element.dataset.utags_link !== key) {
       element.dataset.utags_link = key
     }
@@ -3902,6 +3899,9 @@
     }
     if (type && element.dataset.utags_type !== type) {
       element.dataset.utags_type = type
+    }
+    if (description && element.dataset.utags_description !== description) {
+      element.dataset.utags_description = description
     }
     if (
       element.dataset.utags_node_type !== "link" &&
@@ -3919,6 +3919,9 @@
     }
     if (element.dataset.utags_title !== void 0) {
       delete element.dataset.utags_title
+    }
+    if (element.dataset.utags_description !== void 0) {
+      delete element.dataset.utags_description
     }
     if (element.dataset.utags_type !== void 0) {
       delete element.dataset.utags_type
@@ -5044,7 +5047,7 @@
     requestIdleCallback(processScannedNodesIdle)
   }
   var content_default =
-    '#TOFIX_uFEFF{display:block}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul:not(.utags_ul)[data-utags_key],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ol:not(.utags_ul)[data-utags_key]{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity).utags_hide_all_tags:not(#utags_should_has_higher_specificity) .utags_ul,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity)[data-utags=off] .utags_ul{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container{position:absolute;top:-999px;height:0px;width:100%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul{z-index:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px;margin-top:0px !important;margin-left:0px !important;flex-wrap:nowrap !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul{box-sizing:border-box !important;display:inline-flex !important;flex-direction:row !important;flex-wrap:wrap !important;align-content:flex-start;justify-content:flex-start;overflow:visible;white-space:normal;list-style-type:none !important;margin:0 !important;padding:0 !important;vertical-align:text-bottom !important;line-height:normal !important;background-color:rgba(0,0,0,0);border:none !important;box-shadow:none !important;max-width:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li{box-sizing:border-box !important;display:inline-flex !important;align-items:center !important;float:none !important;overflow:visible;width:unset !important;height:unset !important;border:none !important;padding:0 !important;margin:0 !important;vertical-align:top !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:first-child .utags_text_tag{margin-left:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:last-child .utags_text_tag{margin-right:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::after{content:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag{box-sizing:border-box !important;display:block !important;border:var(--utags-text-tag-border-width) solid var(--utags-text-tag-border-color);color:var(--utags-text-tag-color) !important;border-radius:3px !important;padding:1px 3px !important;margin:0 1px !important;font-size:var(--utags-text-tag-font-size) !important;font-family:var(--utags-text-tag-font-family) !important;letter-spacing:0 !important;line-height:1 !important;height:unset !important;width:unset !important;font-weight:normal !important;text-decoration:none !important;text-transform:none !important;text-align:center !important;text-shadow:none !important;text-indent:0 !important;min-width:unset !important;min-height:unset !important;max-width:unset !important;max-height:unset !important;background:unset !important;background-color:var(--utags-text-tag-background-color) !important;cursor:pointer;z-index:0;pointer-events:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag:link,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag:link{cursor:pointer}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::before{content:attr(data-utags_tag);display:block;position:static;font-size:var(--utags-text-tag-font-size);line-height:1;height:unset;width:unset;max-width:var(--utags-text-tag-max-width);white-space:var(--utags-text-tag-white-space);overflow:hidden;text-overflow:ellipsis;border-radius:unset;border:unset;background:unset;margin:unset;padding:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::after,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::after{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]{height:var(--utags-visited-tag-size) !important;width:var(--utags-visited-tag-size) !important;border-radius:var(--utags-visited-tag-size) !important;--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);--utags-text-tag-border-width: 0px;margin-left:2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_emoji_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_emoji_tag{--utags-text-tag-background-color: var( --utags-emoji-tag-background-color );--utags-text-tag-font-size: var(--utags-emoji-tag-font-size);--utags-text-tag-font-family: var(--utags-emoji-tag-font-family);--utags-text-tag-border-width: var(--utags-emoji-tag-border-width);--utags-text-tag-border-color: var(--utags-emoji-tag-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606\u2606]{--utags-text-tag-background-color: var(--utags-star-tag-background-color);--utags-text-tag-font-size: var(--utags-star-tag-font-size);--utags-text-tag-font-family: var(--utags-star-tag-font-family);--utags-text-tag-border-width: var(--utags-star-tag-border-width);--utags-text-tag-border-color: var(--utags-star-tag-border-color);--utags-text-tag-color: var(--utags-star-tag-color);padding:0 2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2{width:var(--utags-captain-tag-size) !important;height:var(--utags-captain-tag-size) !important;padding:1px 0 0 1px !important;background:none !important;color:var(--utags-captain-tag-color) !important;border:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2::before{content:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 svg{fill:currentColor !important;vertical-align:-3px;margin:0 !important;padding:0 !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 *{color:inherit !important;fill:currentColor !important;width:unset;height:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag{opacity:1%;position:absolute;top:var(--utags-notag-captain-tag-top, 0);left:var(--utags-notag-captain-tag-left, 0);padding:0 !important;margin:0 !important;width:4px !important;height:4px !important;font-size:1px !important;background-color:var(--utags-captain-tag-background-color) !important;transition:all 0s .3s !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:focus{color:var(--utags-captain-tag-hover-color) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0{margin:0 !important;display:var(--utags-notag-ul-disply, inline) !important;float:var(--utags-notag-ul-float, none);height:var(--utags-notag-ul-height, unset);width:var(--utags-notag-ul-width, unset) !important;position:var(--utags-notag-ul-position, unset);top:var(--utags-notag-ul-top, unset)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0>li,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0>li{position:relative !important;height:var(--utags-captain-tag-size) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(.utags_ul):hover+.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_fit_content]:hover .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul:hover .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_active .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(a):not([data-utags_node_type=link]):not(.utags_ul)+.utags_ul .utags_captain_tag{opacity:100%;width:calc(var(--utags-captain-tag-size) + 8px) !important;height:calc(var(--utags-captain-tag-size) + 8px) !important;padding:5px 4px 4px 5px !important;transition:all 0s .1s !important;z-index:90}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_hide_all .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag{transition:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal{position:fixed;top:0;left:0;height:0;width:0;z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_wrapper{position:fixed;display:flex;align-items:flex-start;justify-content:center;width:100%;inset:0px;padding-top:5vh;background-color:hsla(0,0%,100%,.1);z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_content{box-sizing:border-box;display:flex;flex-direction:column;max-width:94%;max-height:100%;overflow:hidden;overflow:auto;color:#000;background-color:#fff !important;border-radius:5px;padding:14px;margin:0 auto;-webkit-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);-moz-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);box-shadow:0px 10px 39px 10px rgba(62,66,66,.22)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_title{display:block;color:#000;margin-bottom:10px;font-size:14px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper{display:flex;flex-direction:row;justify-content:end;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button{font-size:14px;height:32px;min-width:80px;font-weight:600;padding:0 8px;border-radius:2px;color:var(--utags-button-text-color);border:1px solid var(--utags-button-border-color);background-color:var(--utags-button-bg-color) !important;text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:hover{background-color:var(--utags-button-hover-bg-color);border-color:var(--utags-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:not(:first-child){margin-left:10px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button.utags_primary{--utags-button-text-color: var(--utags-action-button-text-color);--utags-button-bg-color: var(--utags-action-button-bg-color);--utags-button-border-color: var(--utags-action-button-border-color);--utags-button-hover-bg-color: var( --utags-action-button-hover-bg-color );--utags-button-hover-border-color: var( --utags-action-button-hover-border-color )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input{-webkit-appearance:none;background-color:var(--utags-button-hover-bg-color);border:none;border-bottom:2px solid var(--utags-button-hover-bg-color);border-radius:4px;box-sizing:border-box;caret-color:var(--cr-input-focus-color);color:var(--cr-input-color);font-family:var(--utags-text-tag-font-family) !important;font-weight:inherit;line-height:inherit;min-height:var(--cr-input-min-height, auto);outline:0;padding-bottom:var(--cr-input-padding-bottom, 6px);padding-inline-end:var(--cr-input-padding-end, 8px);padding-inline-start:var(--cr-input-padding-start, 8px);padding-top:var(--cr-input-padding-top, 6px);text-align:left;text-overflow:ellipsis;width:100%;margin:0;font-size:12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus-visible{outline:0;border-bottom:2px solid var(--utags-action-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt .utags_link_settings{font-size:12px;text-decoration:underline;cursor:pointer;color:#374151}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper{display:flex;justify-content:space-between}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper .utags_button_copy{cursor:pointer;font-size:10px;line-height:1;height:18px;padding:0 6px;border-radius:2px;color:var(--utags-action-button-text-color);background-color:var(--utags-action-button-bg-color);border:1px solid var(--utags-action-button-border-color);text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags{list-style-type:none;margin:0;padding:0 0 10px 0 !important;display:flex !important;flex-direction:row;flex-wrap:wrap}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty+button{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag:hover{--utags-text-tag-color: #000;--utags-text-tag-border-color: #000;--utags-text-tag-background-color: unset;opacity:.5;text-decoration:line-through !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag[data-utags_tag=":visited"]:hover{--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);opacity:.3}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_list_wrapper{display:flex;justify-content:space-between;max-height:200px;overflow-y:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list{flex-grow:1;list-style-type:none;margin:0;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:empty{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:not(:first-child){margin-left:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list::before{content:attr(data-utags_list_name);position:sticky;z-index:1;top:0;display:block;font-size:12px;font-weight:600;text-align:left;padding:0 8px 0 8px;cursor:default;background-color:#f8fafe}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li{box-sizing:border-box;cursor:pointer;font-size:12px;height:18px;display:flex;align-items:center;padding:0 8px 0 8px;margin:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active2{background-color:#fef2f2}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--utags-text-tag-font-family) !important;font-size:12px;line-height:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_emoji_list li span{font-family:var(--utags-emoji-tag-font-family) !important;line-height:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list .utags_text_tag::before{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_disable_tag_style .utags_text_tag{--utags-text-tag-color: #000;--utags-text-tag-border-width: 0;--utags-text-tag-border-color: unset;--utags-text-tag-background-color: #ffffff00 !important;--utags-text-tag-font-size: 12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container{position:absolute;top:-100px;right:100px;z-index:1000;background-color:#bdbdbd;padding:4px 8px;border-radius:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a{display:inline}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_01{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_11{object-position:0% 200%;position:absolute;top:-9999px;z-index:100;margin-top:18px !important;margin-left:0px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key=customStyleValue]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key^=customStyleValue_]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]{transition:opacity .1s ease-in}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6807\u9898\u515A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6A19\u984C\u9EE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5E7F,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5EE3,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65E0\u804A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5FFD\u7565,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",ignore,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",clickbait,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",promotion,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",sb,"]{opacity:10%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u9605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u95B1,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8B80,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8BFB,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65B0\u7528\u6237,"]{opacity:50%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",hide,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u9690\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u96B1\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C4F\u853D,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C01\u9396,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u4E0D\u518D\u663E\u793A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",block,"]{opacity:5%;display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",!"]{opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u95DC\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u7A0D\u540E\u9605\u8BFB,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fefce8) !important;opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fef2f2) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]:hover{opacity:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag2{color:#ff0 !important}[data-utags-visited="4"] [data-utags_list_node*=",:visited,"] [data-utags_condition_node][data-utags_visited="1"]{color:var(--utags-visited-title-color) !important}[data-utags-visited="2"] [data-utags_list_node*=",:visited,"]{opacity:var(--utags-visited-opacity)}[data-utags-visited="3"] [data-utags_list_node*=",:visited,"]{opacity:5%;display:none}.utags_no_hide [data-utags_list_node*=","]{display:var(--utags-list-node-display) !important}.utags_no_opacity_effect [data-utags_list_node*=","]{opacity:100% !important}textarea[data-key=emojiTags]{font-family:var(--utags-text-tag-font-family)}:root{--utags-list-node-display: block;--utags-captain-tag-background-color: #ffffffb3;--utags-captain-tag-background-color-overlap: #ffffffdd;--utags-captain-tag-color: #ff6361;--utags-captain-tag-hover-color: #256cf1;--utags-captain-tag-size: 14px;--utags-text-tag-color: red;--utags-text-tag-border-color: red;--utags-text-tag-background-color: unset;--utags-text-tag-font-size: 10px;--utags-text-tag-border-width: 1px;--utags-text-tag-max-width: 90px;--utags-text-tag-white-space: nowrap;--utags-text-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-emoji-tag-border-color: #fff0;--utags-emoji-tag-background-color: #fff0;--utags-emoji-tag-font-size: 12px;--utags-emoji-tag-border-width: 0;--utags-emoji-tag-font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-star-tag-color: #ffd700;--utags-star-tag-border-color: #fff0;--utags-star-tag-background-color: #fff0;--utags-star-tag-font-size: 14px;--utags-star-tag-border-width: 0;--utags-star-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-visited-tag-background-color: #bdbdbd;--utags-visited-tag-size: 11px;--utags-visited-title-color: #aaa;--utags-visited-opacity: 10%;--utags-button-text-color: #1a73e8;--utags-button-bg-color: #ffffff;--utags-button-border-color: #dadce0;--utags-button-hover-bg-color: #4285f40a;--utags-button-hover-border-color: #d2e3fc;--utags-action-button-text-color: #ffffff;--utags-action-button-bg-color: #1a73e8;--utags-action-button-border-color: #1a73e8;--utags-action-button-hover-bg-color: #1a73e8e6;--utags-action-button-hover-border-color: #1a73e8e6;--utags-notag-ul-disply-1: inline;--utags-notag-ul-float-1: none;--utags-notag-ul-height-1: unset;--utags-notag-ul-width-1: unset;--utags-notag-ul-position-1: unset;--utags-notag-ul-top-1: unset;--utags-notag-captain-tag-top-1: 0;--utags-notag-captain-tag-left-1: 0;--utags-notag-ul-disply-2: block;--utags-notag-ul-height-2: 0;--utags-notag-ul-width-2: 0;--utags-notag-ul-position-2: unset;--utags-notag-ul-top-2: unset;--utags-notag-captain-tag-top-2: -22px;--utags-notag-captain-tag-left-2: -4px;--utags-notag-ul-disply-3: block;--utags-notag-ul-height-3: 0;--utags-notag-ul-width-3: 0;--utags-notag-ul-position-3: absolute;--utags-notag-ul-top-3: 0;--utags-notag-captain-tag-top-3: 0;--utags-notag-captain-tag-left-3: -4px;--utags-notag-ul-disply-4: block;--utags-notag-ul-height-4: 0;--utags-notag-ul-width-4: 0;--utags-notag-ul-position-4: absolute;--utags-notag-ul-top-4: unset;--utags-notag-captain-tag-top-4: 0;--utags-notag-captain-tag-left-4: -4px;--utags-notag-ul-disply-5: block;--utags-notag-ul-height-5: 0;--utags-notag-ul-width-5: 0;--utags-notag-ul-position-5: absolute;--utags-notag-ul-top-5: -9999px;--utags-notag-captain-tag-top-5: 0;--utags-notag-captain-tag-left-5: -4px;--utags-notag-ul-disply: var(--utags-notag-ul-disply-1);--utags-notag-ul-float: var(--utags-notag-ul-float-1);--utags-notag-ul-height: var(--utags-notag-ul-height-1);--utags-notag-ul-width: var(--utags-notag-ul-width-1);--utags-notag-ul-position: var(--utags-notag-ul-position-1);--utags-notag-ul-top: var(--utags-notag-ul-top-1);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-1);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-1)}table{--utags-list-node-display: table-row-group}[data-utags_darkmode="1"]{--utags-visited-title-color: #666}'
+    '#TOFIX_uFEFF{display:block}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul:not(.utags_ul)[data-utags_key],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ol:not(.utags_ul)[data-utags_key]{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity).utags_hide_all_tags:not(#utags_should_has_higher_specificity) .utags_ul,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity)[data-utags=off] .utags_ul{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container{position:absolute;top:-999px;height:0px;width:100%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul{z-index:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_absolute_ul_container .utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px;margin-top:0px !important;margin-left:0px !important;flex-wrap:nowrap !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul{box-sizing:border-box !important;display:inline-flex !important;flex-direction:row !important;flex-wrap:wrap !important;align-content:flex-start;justify-content:flex-start;overflow:visible;white-space:normal;list-style-type:none !important;margin:0 !important;padding:0 !important;vertical-align:text-bottom !important;line-height:normal !important;background-color:rgba(0,0,0,0);border:none !important;box-shadow:none !important;max-width:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li{box-sizing:border-box !important;display:inline-flex !important;align-items:center !important;float:none !important;overflow:visible;width:unset !important;height:unset !important;border:none !important;padding:0 !important;margin:0 !important;vertical-align:top !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:first-child .utags_text_tag{margin-left:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li:last-child .utags_text_tag{margin-right:3px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul>li::after{content:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag{box-sizing:border-box !important;display:block !important;border:var(--utags-text-tag-border-width) solid var(--utags-text-tag-border-color);color:var(--utags-text-tag-color) !important;border-radius:3px !important;padding:1px 3px !important;margin:0 1px !important;font-size:var(--utags-text-tag-font-size) !important;font-family:var(--utags-text-tag-font-family) !important;letter-spacing:0 !important;line-height:1 !important;height:unset !important;width:unset !important;font-weight:normal !important;text-decoration:none !important;text-transform:none !important;text-align:center !important;text-shadow:none !important;text-indent:0 !important;min-width:unset !important;min-height:unset !important;max-width:unset !important;max-height:unset !important;background:unset !important;background-color:var(--utags-text-tag-background-color) !important;cursor:pointer;z-index:0;pointer-events:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag:link,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag:link{cursor:pointer}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::before{content:attr(data-utags_tag);display:block;position:static;font-size:var(--utags-text-tag-font-size);line-height:1;height:unset;width:unset;max-width:var(--utags-text-tag-max-width);white-space:var(--utags-text-tag-white-space);overflow:hidden;text-overflow:ellipsis;border-radius:unset;border:unset;background:unset;margin:unset;padding:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag]::after,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag]::after{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag][data-utags_tag_selectable]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]{height:var(--utags-visited-tag-size) !important;width:var(--utags-visited-tag-size) !important;border-radius:var(--utags-visited-tag-size) !important;--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);--utags-text-tag-border-width: 0px;margin-left:2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=":visited"]::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=":visited"]::before{display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_emoji_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_emoji_tag{--utags-text-tag-background-color: var( --utags-emoji-tag-background-color );--utags-text-tag-font-size: var(--utags-emoji-tag-font-size);--utags-text-tag-font-family: var(--utags-emoji-tag-font-family);--utags-text-tag-border-width: var(--utags-emoji-tag-border-width);--utags-text-tag-border-color: var(--utags-emoji-tag-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_text_tag[data-utags_tag=\u2606\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2605\u2605\u2605],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_text_tag[data-utags_tag=\u2606\u2606\u2606]{--utags-text-tag-background-color: var(--utags-star-tag-background-color);--utags-text-tag-font-size: var(--utags-star-tag-font-size);--utags-text-tag-font-family: var(--utags-star-tag-font-family);--utags-text-tag-border-width: var(--utags-star-tag-border-width);--utags-text-tag-border-color: var(--utags-star-tag-border-color);--utags-text-tag-color: var(--utags-star-tag-color);padding:0 2px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2{width:var(--utags-captain-tag-size) !important;height:var(--utags-captain-tag-size) !important;padding:1px 0 0 1px !important;background:none !important;color:var(--utags-captain-tag-color) !important;border:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag::before,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2::before{content:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag svg,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 svg{fill:currentColor !important;vertical-align:-3px;margin:0 !important;padding:0 !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2 *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag *,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2 *{color:inherit !important;fill:currentColor !important;width:unset;height:unset}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag{opacity:1%;position:absolute;top:var(--utags-notag-captain-tag-top, 0);left:var(--utags-notag-captain-tag-left, 0);padding:0 !important;margin:0 !important;width:4px !important;height:4px !important;font-size:1px !important;background-color:var(--utags-captain-tag-background-color) !important;transition:all 0s .3s !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul .utags_captain_tag2:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:hover,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list .utags_captain_tag2:focus{color:var(--utags-captain-tag-hover-color) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0{margin:0 !important;display:var(--utags-notag-ul-disply, inline) !important;float:var(--utags-notag-ul-float, none);height:var(--utags-notag-ul-height, unset);width:var(--utags-notag-ul-width, unset) !important;position:var(--utags-notag-ul-position, unset);top:var(--utags-notag-ul-top, unset)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_0>li,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_select_list.utags_ul_0>li{position:relative !important;height:var(--utags-captain-tag-size) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_captain_tag:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags]:hover+.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_node_type=link]:hover+.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_fit_content]:hover .utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul:hover .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_ul.utags_ul_active .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag{opacity:100%;width:calc(var(--utags-captain-tag-size) + 8px) !important;height:calc(var(--utags-captain-tag-size) + 8px) !important;padding:5px 4px 4px 5px !important;transition:all 0s .1s !important;z-index:90}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_hide_all .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_show_all .utags_captain_tag{transition:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal{position:fixed;top:0;left:0;height:0;width:0;z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_wrapper{position:fixed;display:flex;align-items:flex-start;justify-content:center;width:100%;inset:0px;padding-top:5vh;background-color:hsla(0,0%,100%,.1);z-index:2147483647}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_modal_content{box-sizing:border-box;display:flex;flex-direction:column;max-width:94%;max-height:100%;overflow:hidden;overflow:auto;color:#000;background-color:#fff !important;border-radius:5px;padding:14px;margin:0 auto;-webkit-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);-moz-box-shadow:0px 10px 39px 10px rgba(62,66,66,.22);box-shadow:0px 10px 39px 10px rgba(62,66,66,.22)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_title{display:block;color:#000;margin-bottom:10px;font-size:14px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper{display:flex;flex-direction:row;justify-content:end;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button{font-size:14px;height:32px;min-width:80px;font-weight:600;padding:0 8px;border-radius:2px;color:var(--utags-button-text-color);border:1px solid var(--utags-button-border-color);background-color:var(--utags-button-bg-color) !important;text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:hover{background-color:var(--utags-button-hover-bg-color);border-color:var(--utags-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button:not(:first-child){margin-left:10px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_buttons_wrapper button.utags_primary{--utags-button-text-color: var(--utags-action-button-text-color);--utags-button-bg-color: var(--utags-action-button-bg-color);--utags-button-border-color: var(--utags-action-button-border-color);--utags-button-hover-bg-color: var( --utags-action-button-hover-bg-color );--utags-button-hover-border-color: var( --utags-action-button-hover-border-color )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input{-webkit-appearance:none;background-color:var(--utags-button-hover-bg-color);border:none;border-bottom:2px solid var(--utags-button-hover-bg-color);border-radius:4px;box-sizing:border-box;caret-color:var(--cr-input-focus-color);color:var(--cr-input-color);font-family:var(--utags-text-tag-font-family) !important;font-weight:inherit;line-height:inherit;min-height:var(--cr-input-min-height, auto);outline:0;padding-bottom:var(--cr-input-padding-bottom, 6px);padding-inline-end:var(--cr-input-padding-end, 8px);padding-inline-start:var(--cr-input-padding-start, 8px);padding-top:var(--cr-input-padding-top, 6px);text-align:left;text-overflow:ellipsis;width:100%;margin:0;font-size:12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt input:focus-visible{outline:0;border-bottom:2px solid var(--utags-action-button-hover-border-color)}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_modal .utags_prompt .utags_link_settings{font-size:12px;text-decoration:underline;cursor:pointer;color:#374151}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper{display:flex;justify-content:space-between}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_current_tags_wrapper .utags_button_copy{cursor:pointer;font-size:10px;line-height:1;height:18px;padding:0 6px;border-radius:2px;color:var(--utags-action-button-text-color);background-color:var(--utags-action-button-bg-color);border:1px solid var(--utags-action-button-border-color);text-shadow:none;text-align:center;font-family:revert}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags{list-style-type:none;margin:0;padding:0 0 10px 0 !important;display:flex !important;flex-direction:row;flex-wrap:wrap}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags:empty+button{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag:hover{--utags-text-tag-color: #000;--utags-text-tag-border-color: #000;--utags-text-tag-background-color: unset;opacity:.5;text-decoration:line-through !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) :not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_current_tags li .utags_text_tag[data-utags_tag=":visited"]:hover{--utags-text-tag-background-color: var( --utags-visited-tag-background-color );--utags-text-tag-border-color: var(--utags-visited-tag-background-color);opacity:.3}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) .utags_list_wrapper{display:flex;justify-content:space-between;max-height:200px;overflow-y:auto}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list{flex-grow:1;list-style-type:none;margin:0;padding:10px 0 10px 0}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:empty{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list:not(:first-child){margin-left:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list::before{content:attr(data-utags_list_name);position:sticky;z-index:1;top:0;display:block;font-size:12px;font-weight:600;text-align:left;padding:0 8px 0 8px;cursor:default;background-color:#f8fafe}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li{box-sizing:border-box;cursor:pointer;font-size:12px;height:18px;display:flex;align-items:center;padding:0 8px 0 8px;margin:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li.utags_active2{background-color:#fef2f2}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--utags-text-tag-font-family) !important;font-size:12px;line-height:1}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_emoji_list li span{font-family:var(--utags-emoji-tag-font-family) !important;line-height:unset !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list .utags_text_tag::before{display:none !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) ul.utags_select_list.utags_disable_tag_style .utags_text_tag{--utags-text-tag-color: #000;--utags-text-tag-border-width: 0;--utags-text-tag-border-color: unset;--utags-text-tag-background-color: #ffffff00 !important;--utags-text-tag-font-size: 12px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container{position:absolute;top:-100px;right:100px;z-index:1000;background-color:#bdbdbd;padding:4px 8px;border-radius:4px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a{display:inline}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_01{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) #utags_current_page_link_container a+.utags_ul_11{object-position:0% 200%;position:absolute;top:-9999px;z-index:100;margin-top:18px !important;margin-left:0px !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key=customStyleValue]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) textarea[data-key^=customStyleValue_]{height:250px}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]{transition:opacity .1s ease-in}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6807\u9898\u515A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6A19\u984C\u9EE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5E7F,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u63A8\u5EE3,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65E0\u804A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5FFD\u7565,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",ignore,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",clickbait,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",promotion,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",sb,"]{opacity:10%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u9605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u95B1,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8B80,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5DF2\u8BFB,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u65B0\u7528\u6237,"]{opacity:50%}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",hide,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u9690\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u96B1\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C4F\u853D,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5C01\u9396,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u4E0D\u518D\u663E\u793A,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",block,"]{opacity:5%;display:none}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2605\u2605\u2605,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u2606\u2606\u2606,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",!"]{opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u95DC\u6CE8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u7A0D\u540E\u9605\u8BFB,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fefce8) !important;opacity:100% !important;display:var(--utags-list-node-display) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u70ED\u95E8,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u6536\u85CF,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u91CD\u8981,"],:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node*=",\u5173\u6CE8,"]{background-image:linear-gradient(to right, rgba(255, 255, 255, 0), #fef2f2) !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_list_node]:hover{opacity:100% !important}:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag,:not(#utags_should_has_higher_specificity):not(#utags_should_has_higher_specificity) [data-utags_other="1"]+ul.utags_ul .utags_captain_tag2{color:#ff0 !important}[data-utags-visited="4"] [data-utags_list_node*=",:visited,"] [data-utags_condition_node][data-utags_visited="1"]{color:var(--utags-visited-title-color) !important}[data-utags-visited="2"] [data-utags_list_node*=",:visited,"]{opacity:var(--utags-visited-opacity)}[data-utags-visited="3"] [data-utags_list_node*=",:visited,"]{opacity:5%;display:none}.utags_no_hide [data-utags_list_node*=","]{display:var(--utags-list-node-display) !important}.utags_no_opacity_effect [data-utags_list_node*=","]{opacity:100% !important}textarea[data-key=emojiTags]{font-family:var(--utags-text-tag-font-family)}:root{--utags-list-node-display: block;--utags-captain-tag-background-color: #ffffffb3;--utags-captain-tag-background-color-overlap: #ffffffdd;--utags-captain-tag-color: #ff6361;--utags-captain-tag-hover-color: #256cf1;--utags-captain-tag-size: 14px;--utags-text-tag-color: red;--utags-text-tag-border-color: red;--utags-text-tag-background-color: unset;--utags-text-tag-font-size: 10px;--utags-text-tag-border-width: 1px;--utags-text-tag-max-width: 90px;--utags-text-tag-white-space: nowrap;--utags-text-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-emoji-tag-border-color: #fff0;--utags-emoji-tag-background-color: #fff0;--utags-emoji-tag-font-size: 12px;--utags-emoji-tag-border-width: 0;--utags-emoji-tag-font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-star-tag-color: #ffd700;--utags-star-tag-border-color: #fff0;--utags-star-tag-background-color: #fff0;--utags-star-tag-font-size: 14px;--utags-star-tag-border-width: 0;--utags-star-tag-font-family: "helvetica neue", "Helvetica", "microsoft yahei", "Arial", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "noto color emoji", "android emoji", "emojisymbols", "emojione mozilla", "twemoji mozilla", "Segoe UI", "Noto Sans";--utags-visited-tag-background-color: #bdbdbd;--utags-visited-tag-size: 11px;--utags-visited-title-color: #aaa;--utags-visited-opacity: 10%;--utags-button-text-color: #1a73e8;--utags-button-bg-color: #ffffff;--utags-button-border-color: #dadce0;--utags-button-hover-bg-color: #4285f40a;--utags-button-hover-border-color: #d2e3fc;--utags-action-button-text-color: #ffffff;--utags-action-button-bg-color: #1a73e8;--utags-action-button-border-color: #1a73e8;--utags-action-button-hover-bg-color: #1a73e8e6;--utags-action-button-hover-border-color: #1a73e8e6;--utags-notag-ul-disply-1: inline;--utags-notag-ul-float-1: none;--utags-notag-ul-height-1: unset;--utags-notag-ul-width-1: unset;--utags-notag-ul-position-1: unset;--utags-notag-ul-top-1: unset;--utags-notag-captain-tag-top-1: 0;--utags-notag-captain-tag-left-1: 0;--utags-notag-ul-disply-2: block;--utags-notag-ul-height-2: 0;--utags-notag-ul-width-2: 0;--utags-notag-ul-position-2: unset;--utags-notag-ul-top-2: unset;--utags-notag-captain-tag-top-2: -22px;--utags-notag-captain-tag-left-2: -4px;--utags-notag-ul-disply-3: block;--utags-notag-ul-height-3: 0;--utags-notag-ul-width-3: 0;--utags-notag-ul-position-3: absolute;--utags-notag-ul-top-3: 0;--utags-notag-captain-tag-top-3: 0;--utags-notag-captain-tag-left-3: -4px;--utags-notag-ul-disply-4: block;--utags-notag-ul-height-4: 0;--utags-notag-ul-width-4: 0;--utags-notag-ul-position-4: absolute;--utags-notag-ul-top-4: unset;--utags-notag-captain-tag-top-4: 0;--utags-notag-captain-tag-left-4: -4px;--utags-notag-ul-disply-5: block;--utags-notag-ul-height-5: 0;--utags-notag-ul-width-5: 0;--utags-notag-ul-position-5: absolute;--utags-notag-ul-top-5: -9999px;--utags-notag-captain-tag-top-5: 0;--utags-notag-captain-tag-left-5: -4px;--utags-notag-ul-disply: var(--utags-notag-ul-disply-1);--utags-notag-ul-float: var(--utags-notag-ul-float-1);--utags-notag-ul-height: var(--utags-notag-ul-height-1);--utags-notag-ul-width: var(--utags-notag-ul-width-1);--utags-notag-ul-position: var(--utags-notag-ul-position-1);--utags-notag-ul-top: var(--utags-notag-ul-top-1);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-1);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-1)}table{--utags-list-node-display: table-row-group}[data-utags_darkmode="1"]{--utags-visited-title-color: #666}'
   var SHADOW_SIGNAL_EVENT = "UTAGS_SHADOW_ROOT_CREATED"
   function isCloudflareChallenges() {
     return (
@@ -5052,13 +5055,22 @@
         'script[src^="https://challenges.cloudflare.com/turnstile/"]'
       ) !== null &&
         (document.querySelector("#challenge-success-text") !== null ||
-          document.querySelector('input[name="cf-turnstile-response"]') !==
-            null ||
           document.querySelector(
             'script[src*="/cdn-cgi/challenge-platform"]'
           ) !== null)) ||
       location.hostname === "challenges.cloudflare.com" ||
       location.href.startsWith("https://linux.do/challenge")
+    )
+  }
+  function isContainCloudflareChallengesScript() {
+    return (
+      "turnstile" in globalThis ||
+      (typeof unsafeWindow !== "undefined" && "turnstile" in unsafeWindow) ||
+      document.querySelector(
+        'script[src^="https://challenges.cloudflare.com/turnstile/"]'
+      ) !== null ||
+      document.querySelector('script[src*="/cdn-cgi/challenge-platform"]') !==
+        null
     )
   }
   function interceptShadowDOM() {
@@ -5070,7 +5082,10 @@
       return
     }
     Element.prototype.attachShadow = function (init) {
-      if (init && init.mode === "closed" && !isCloudflareChallenges()) {
+      if (init && init.mode === "closed") {
+        if (isCloudflareChallenges() || isContainCloudflareChallengesScript()) {
+          return originalAttachShadow.call(this, init)
+        }
         init.mode = "open"
       }
       const shadow = originalAttachShadow.call(this, init)
@@ -5275,7 +5290,7 @@
       if (finalDecision) {
         if (!isCurrentlyMatched) {
           this.results.add(node)
-          node.setAttribute(MATCH_ATTR, "")
+          setAttribute(node, MATCH_ATTR, "")
         }
       } else {
         if (
@@ -5625,21 +5640,19 @@
     }
   })()
   var v2ex_default =
-    ':not(#a):not(#b):not(#c) .header h1+.utags_ul_0{object-position:0% 200%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: 10px;--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5)}:not(#a):not(#b):not(#c) .title .node-breadcrumb[data-utags_fit_content="1"]{display:inline-block !important;max-width:fit-content !important}:not(#a):not(#b):not(#c) .title .node-breadcrumb+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: 2px;--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .title .node-breadcrumb+.utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .box .header>span[data-utags_flag=tag_page]+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: 2px;--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .box .header>span[data-utags_flag=tag_page]+.utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .xna-entry,:not(#a):not(#b):not(#c) .planet-post{--utags-list-node-display: flex}'
+    ':not(#a):not(#b):not(#c) .header h1+.utags_ul_0{object-position:0% 200%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: -8px;--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5)}:not(#a):not(#b):not(#c) h1[data-utags_type=user][data-utags_fit_content="1"]{max-width:fit-content !important}:not(#a):not(#b):not(#c) h1[data-utags_type=user]+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: 0px;--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5)}:not(#a):not(#b):not(#c) [class*=v2p-theme] .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) [class*=v2p-theme] .topic_info .utags_ul_1{z-index:2}:not(#a):not(#b):not(#c) .title .node-breadcrumb[data-utags_fit_content="1"]{display:inline-block !important;max-width:fit-content !important}:not(#a):not(#b):not(#c) .title .node-breadcrumb+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: 2px;--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .title .node-breadcrumb+.utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .box .header>span[data-utags_flag=tag_page]+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: 2px;--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .box .header>span[data-utags_flag=tag_page]+.utags_ul_1{object-position:200% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .xna-entry,:not(#a):not(#b):not(#c) .planet-post{--utags-list-node-display: flex}'
   var v2ex_default2 = (() => {
     function getCanonicalUrl2(url) {
       if (url.startsWith("https://links.pipecraft")) {
         url = url.replace("https://links.pipecraft.net/", "https://")
       }
-      if (url.includes("v2ex.com")) {
+      if (url.includes("v2ex.com") || url.includes("v2ex.co")) {
+        url = url.replace(/(\w+\.)?v2ex.com?/, "www.v2ex.com")
+        if (/\/t\/\d+\?p=\d+#r_\d+/.test(url)) {
+        } else {
+          url = url.replace(/[?#].*/, "")
+        }
         return url
-          .replace(/[?#].*/, "")
-          .replace(/(\w+\.)?v2ex.com/, "www.v2ex.com")
-      }
-      if (url.includes("v2ex.co")) {
-        return url
-          .replace(/[?#].*/, "")
-          .replace(/(\w+\.)?v2ex.co/, "www.v2ex.com")
       }
       return url
     }
@@ -5665,7 +5678,7 @@
           }
         }
         if (location.pathname.includes("/t/")) {
-          const header = $(".header h1")
+          const header = $(".post-detail .header h1") || $(".header h1")
           if (header) {
             const key = getCanonicalUrl2(
               "https://www.v2ex.com" + location.pathname
@@ -5734,7 +5747,11 @@
           }
         }
       },
-      listNodesSelectors: [".box .cell", ".my-box .comment"],
+      listNodesSelectors: [
+        ".box .cell",
+        ".my-box .comment",
+        ".v2p-modal-comments .cell",
+      ],
       conditionNodesSelectors: [
         ".box .cell .topic-link",
         ".item_hot_topic_title a",
@@ -5744,10 +5761,12 @@
         ".xna-entry-source a",
         ".planet-site-address a",
         '.box .cell strong a.dark[href*="/member/"]',
+        '.box .cell[id^="r_"] strong > a[href*="/member/"]',
         ".box .cell .ago a",
         ".box .cell .fade.small a",
         ".comment .username",
         ".comment .ago",
+        '.v2p-modal-comments .cell strong > a[href*="/member/"]',
       ],
       matchedNodesSelectors: [
         'a[href*="/t/"]',
@@ -5759,6 +5778,17 @@
         ".box .cell .fr .tag",
         ".box .inner .tag",
       ],
+      validate(element, href) {
+        if (
+          element.matches(
+            '.box .cell .topic_info strong:first-of-type a[href*="/member/"]'
+          )
+        ) {
+          element.dataset.utags_target_selector =
+            ".box .cell .topic_info strong:first-of-type"
+        }
+        return true
+      },
       excludeSelectors: [
         ...default_default2.excludeSelectors,
         ".site-nav a",
@@ -5771,6 +5801,8 @@
         ".planet-post-time",
         "#Rightbar .ago",
         ".cited_reply .ago",
+        ".v2p-modal-main .ago",
+        ".button",
       ],
       getStyle: () => v2ex_default,
       getCanonicalUrl: getCanonicalUrl2,
@@ -6365,7 +6397,7 @@
           for (const element of $$(
             '[data-utags_list_node*=",hide,"],\n    [data-utags_list_node*=",\u9690\u85CF,"],\n    [data-utags_list_node*=",\u5C4F\u853D,"],\n    [data-utags_list_node*=",\u4E0D\u518D\u663E\u793A,"],\n    [data-utags_list_node*=",block,"]'
           )) {
-            element.setAttribute("collapsed", "")
+            setAttribute(element, "collapsed", "")
           }
         }, 1e3)
       },
@@ -8665,7 +8697,7 @@
     }
   })()
   var nodeseek_com_default =
-    ":not(#a):not(#b):not(#c) a+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) a+.utags_ul_1{object-position:0% 200%}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item{--utags-list-node-display: flex}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item a.post-category+.utags_ul_0{object-position:-100% 50%}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item a.post-category+.utags_ul_1{object-position:-100% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .nsk-post-wrapper .author-info ul.utags_ul_1{vertical-align:middle !important}:not(#a):not(#b):not(#c) .nsk-post-wrapper .author-info ul.utags_ul_1 a.utags_text_tag{height:15px !important}:not(#a):not(#b):not(#c) .hover-user-card{z-index:100}"
+    ":not(#a):not(#b):not(#c) .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .utags_ul_1{object-position:0% 200%}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item{--utags-list-node-display: flex}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item a.post-category+.utags_ul_0{object-position:-100% 50%}:not(#a):not(#b):not(#c) ul.post-list li.post-list-item a.post-category+.utags_ul_1{object-position:-100% 50%;position:absolute;top:-9999px}:not(#a):not(#b):not(#c) .nsk-post-wrapper .author-info ul.utags_ul_1{vertical-align:middle !important}:not(#a):not(#b):not(#c) .nsk-post-wrapper .author-info ul.utags_ul_1 a.utags_text_tag{height:15px !important}:not(#a):not(#b):not(#c) .hover-user-card{z-index:100}"
   var nodeseek_com_default2 = (() => {
     const prefix2 = location.origin + "/"
     function getUserProfileUrl(url, exact = false) {
@@ -9507,7 +9539,7 @@
     }
   })()
   var libra_com_default =
-    ":not(#a):not(#b):not(#c) *+.utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) *+.utags_ul_1{object-position:0% 200%}"
+    ':not(#a):not(#b):not(#c) .utags_ul_0{object-position:200% 50%;--utags-notag-ul-disply: var(--utags-notag-ul-disply-5);--utags-notag-ul-height: var(--utags-notag-ul-height-5);--utags-notag-ul-position: var(--utags-notag-ul-position-5);--utags-notag-ul-top: var(--utags-notag-ul-top-5);--utags-notag-captain-tag-top: var(--utags-notag-captain-tag-top-5);--utags-notag-captain-tag-left: var(--utags-notag-captain-tag-left-5);--utags-captain-tag-background-color: var( --utags-captain-tag-background-color-overlap )}:not(#a):not(#b):not(#c) .utags_ul_1{object-position:0% 200%}:not(#a):not(#b):not(#c) [data-main-left] ul.card li a.link[data-utags_fit_content="1"]{max-width:fit-content !important}:not(#a):not(#b):not(#c) [data-main-left] ul.card li div.truncate+.utags_ul_1{margin-left:-8px !important}:not(#a):not(#b):not(#c) [data-main-left] h1[data-utags_fit_content="1"]{max-width:fit-content !important}'
   var libra_com_default2 = (() => {
     const prefix2 = location.origin + "/"
     function getPostUrl(url, exact = false) {
@@ -9556,12 +9588,49 @@
             ? void 0
             : _a.classList.add("utags_no_hide")
         }
-        const key = getPostUrl(location.href)
-        if (key) {
-          const element = $("[data-main-left] h1")
-          if (element) {
-            setUtagsAttributes(element, { key, type: "post" })
-            addVisited(key)
+        {
+          const key = getPostUrl(location.href)
+          if (key) {
+            const element = $("[data-main-left] h1")
+            if (element) {
+              const title = getTrimmedTitle(element)
+              if (title) {
+                setUtagsAttributes(element, { key, type: "post" })
+                addVisited(key)
+                const commentElements = $$("article[id]")
+                for (const element2 of commentElements) {
+                  const id = element2.id.replace("comment-", "")
+                  const target = $("time", element2)
+                  if (!id || !target) {
+                    continue
+                  }
+                  const commentkey = "".concat(key, "?commentId=").concat(id)
+                  const formattedTitle = "\u56DE\u590D >> ".concat(title)
+                  const description = getTrimmedTitle(
+                    $("section div", element2) || element2
+                  )
+                  const formattedDescription =
+                    description.length > 1e3
+                      ? description.slice(0, 1e3)
+                      : description
+                  setUtagsAttributes(target, {
+                    key: commentkey,
+                    title: formattedTitle,
+                    description: formattedDescription,
+                    type: "comment",
+                  })
+                }
+              }
+            }
+          }
+        }
+        {
+          const key = getUserProfileUrl(location.href)
+          if (key) {
+            const element = $("[data-main-left] span.font-bold.text-xl")
+            if (element) {
+              setUtagsAttributes(element, { key, type: "user" })
+            }
           }
         }
       },
@@ -9573,21 +9642,24 @@
       ],
       conditionNodesSelectors: [
         "[data-main-left] ul.card li a:not(time + div a):not(.utags_text_tag)",
-        '[data-main-left].utags_no_hide > div > div.card article address > div > a[rel="author"]',
-        '[data-main-left]:not(.utags_no_hide) > div > div.card article address > div > a[rel="author"]',
+        '[data-main-left].utags_no_hide > div > div.card article address > div > a[href^="/user/"]',
+        '[data-main-left]:not(.utags_no_hide) > div > div.card article address > div > a[href^="/user/"]',
         "[data-right-sidebar] .card-body > h4 + div > div a",
       ],
       validate(element, href) {
         if (!href.startsWith(prefix2)) {
           return true
         }
-        let key = getPostUrl(href)
+        let key = getPostUrl(href, true)
         if (key) {
           const title = getTrimmedTitle(element)
           if (!title) {
             return false
           }
           if (title === "\u6700\u540E\u56DE\u590D") {
+            return false
+          }
+          if ($("svg", element) && /\d+/.test(title)) {
             return false
           }
           const meta = { type: "post", title }
@@ -9600,6 +9672,10 @@
           const title = getTrimmedTitle(element)
           if (!title) {
             return false
+          }
+          if (element.matches("[data-main-left] ul.card li div.truncate > a")) {
+            element.dataset.utags_target_selector =
+              "[data-main-left] ul.card li div.truncate"
           }
           const meta = { type: "user", title }
           setUtags(element, key, meta)
@@ -9620,6 +9696,8 @@
         'a[href^="/post/hot/"]',
         'a[href$="/history"]',
         'a[href^="/auth"]',
+        'input[type="checkbox"] + div',
+        '[role="dialog"]',
       ],
       postProcess() {
         const theme = doc.documentElement.dataset.theme || ""
@@ -10127,7 +10205,7 @@
     none_default,
     none_default,
   ]
-  var BASE_EXCLUDE_SELECTOR = "[data-utags_exclude],svg"
+  var BASE_EXCLUDE_SELECTOR = "[data-utags_exclude],a a,svg"
   var getCanonicalUrlFunctionList = [default_default2, ...sites]
     .map((site) => site.getCanonicalUrl)
     .filter((v) => typeof v === "function")
@@ -10201,9 +10279,6 @@
     return void 0
   }
   function getListNodes() {
-    if (typeof currentSite.preProcess === "function") {
-      currentSite.preProcess()
-    }
     return listNodesSelector ? $$(listNodesSelector) : []
   }
   function getCanonicalUrl(url) {
@@ -10292,13 +10367,17 @@
     if (type) {
       meta.type = type
     }
+    const description = element.dataset.utags_description
+    if (description) {
+      meta.description = description
+    }
     setElementUtags(element, {
       key,
       originalKey,
       meta: existingMeta ? Object.assign(meta, existingMeta) : meta,
     })
   }
-  function matchedNodes() {
+  function postProcess() {
     if (typeof currentSite.postProcess === "function") {
       try {
         currentSite.postProcess()
@@ -10306,7 +10385,6 @@
         console.error(error)
       }
     }
-    return []
   }
   function createUTagsScannerOptions(options) {
     return {
@@ -10390,6 +10468,13 @@
           .concat(stats.pureScanDuration.toFixed(2), "ms")
       )
       currentResult = list
+      if (typeof currentSite.preProcess === "function") {
+        try {
+          currentSite.preProcess()
+        } catch (error) {
+          console.error(error)
+        }
+      }
       if (options == null ? void 0 : options.onScanCompleted) {
         options.onScanCompleted(list)
       }
@@ -11211,7 +11296,7 @@
         emojiTags: {
           title: i2("settings.emojiTags"),
           defaultValue:
-            "\u2605, \u2605\u2605, \u2605\u2605\u2605, \u2606, \u2606\u2606, \u2606\u2606\u2606, \u{1F44D}, \u{1F44E}, \u2764\uFE0F, \u2B50, \u{1F31F}, \u{1F525}, \u{1F4A9}, \u26A0\uFE0F, \u{1F4AF}, \u{1F44F}, \u{1F437}, \u{1F4CC}, \u{1F4CD}, \u{1F3C6}, \u{1F48E}, \u{1F4A1}, \u{1F916}, \u{1F4D4}, \u{1F4D6}, \u{1F4DA}, \u{1F4DC}, \u{1F4D5}, \u{1F4D7}, \u{1F9F0}, \u26D4, \u{1F6AB}, \u{1F534}, \u{1F7E0}, \u{1F7E1}, \u{1F7E2}, \u{1F535}, \u{1F7E3}, \u2757, \u2753, \u2705, \u274C",
+            "\u2605, \u2605\u2605, \u2605\u2605\u2605, \u2606, \u2606\u2606, \u2606\u2606\u2606, \u{1F44D}, \u{1F44E}, \u2764\uFE0F, \u2B50, \u{1F31F}, \u{1F525}, \u{1F4A9}, \u26A0\uFE0F, \u{1F4AF}, \u{1F44F}, \u{1F440}, \u{1F437}, \u{1F4CC}, \u{1F4CD}, \u{1F3C6}, \u{1F48E}, \u{1F4A1}, \u{1F916}, \u{1F4D4}, \u{1F4D6}, \u{1F4DA}, \u{1F4DC}, \u{1F4D5}, \u{1F4D7}, \u{1F9F0}, \u26D4, \u{1F6AB}, \u{1F534}, \u{1F7E0}, \u{1F7E1}, \u{1F7E2}, \u{1F535}, \u{1F7E3}, \u2757, \u2753, \u2705, \u274C",
           placeholder: "\u{1F44D}, \u{1F44E}",
           type: "textarea",
           group: groupNumber,
@@ -11308,11 +11393,11 @@
     if (getSettingsValue("showHidedItems")) {
       if (!hasClass(doc.documentElement, "utags_no_hide")) {
         addClass(doc.documentElement, "utags_no_hide")
-        updateTagPositionForAllTargets()
+        updateTagPositionForAllTaggedTargets()
       }
     } else if (hasClass(doc.documentElement, "utags_no_hide")) {
       removeClass(doc.documentElement, "utags_no_hide")
-      updateTagPositionForAllTargets()
+      updateTagPositionForAllTaggedTargets()
     }
     if (getSettingsValue("noOpacityEffect")) {
       if (!hasClass(doc.documentElement, "utags_no_opacity_effect")) {
@@ -11529,6 +11614,26 @@
       updateTagPosition(target)
     })
   }
+  function getUtagsTargetElementByElement(element) {
+    if (element.dataset.utags_target_selector) {
+      return (
+        $(element.dataset.utags_target_selector, element) ||
+        element.closest(element.dataset.utags_target_selector) ||
+        element
+      )
+    }
+    return element
+  }
+  function appendUtagsToElement(element, utagsUl) {
+    if (!utagsUl) {
+      return
+    }
+    const target = getUtagsTargetElementByElement(element)
+    if (!(target instanceof HTMLAnchorElement)) {
+      setAttribute(target, "data-utags_node_type", "link")
+    }
+    target.after(utagsUl)
+  }
   function appendTagsToPage(element, key, tags, meta) {
     let utagsId2 = element.dataset.utags_id
     if (!utagsId2) {
@@ -11544,7 +11649,7 @@
         key === getAttribute(existingUtagsUl, "data-utags_key")
       ) {
         if (!existingUtagsUl.isConnected) {
-          element.after(existingUtagsUl)
+          appendUtagsToElement(element, existingUtagsUl)
           ensureUtagsUlTracked(existingUtagsUl)
         }
         return
@@ -11604,16 +11709,9 @@
         bindScrollEvent(element)
       }
     } else {
-      element.after(utagsUl)
+      appendUtagsToElement(element, utagsUl)
     }
     setAttribute(element, "data-utags", tags.join(","))
-    createTimeout(() => {
-      const style = getComputedStyle(element)
-      const zIndex = style.zIndex
-      if (zIndex && zIndex !== "auto") {
-        setStyle(utagsUl, { zIndex })
-      }
-    }, 200)
   }
   function processNodeForDisplay(node) {
     const result = buildTagsForDisplay(node)
@@ -11622,11 +11720,6 @@
     }
     const { key, tags, meta } = result
     appendTagsToPage(node, key, tags, meta)
-    if (tags.length > 0) {
-      setTimeout(() => {
-        updateTagPosition(node)
-      })
-    }
   }
   configureScannedNodeProcessor(processNodeForDisplay)
   configureQueueEmptyCallback(displayTags)
@@ -11641,20 +11734,9 @@
     emojiTags2 = await getEmojiTags()
     const listNodes = getListNodes()
     for (const node of listNodes) {
-      node.dataset.utags_list_node = ""
-    }
-    if (DEBUG) {
-      console.debug("before matchedNodes")
-    }
-    const nodes = matchedNodes()
-    if (DEBUG) {
-      console.debug("after matchedNodes", nodes.length)
-    }
-    for (const node of nodes) {
-      processNodeForDisplay(node)
-    }
-    if (DEBUG) {
-      console.debug("after appendTagsToPage", getRegisteredUtagsUlCount())
+      if (node.dataset.utags_list_node === void 0) {
+        node.dataset.utags_list_node = ""
+      }
     }
     for (const node of listNodes) {
       const conditionNodes = $$("[data-utags_condition_node]", node)
@@ -11671,13 +11753,21 @@
       if (node.dataset.utags_condition_node !== void 0 && node.dataset.utags) {
         tagsArray.push(node.dataset.utags)
       }
+      let listNodeValue
       if (tagsArray.length === 1) {
-        node.dataset.utags_list_node = "," + tagsArray[0] + ","
+        listNodeValue = "," + tagsArray[0] + ","
       } else if (tagsArray.length > 1) {
-        node.dataset.utags_list_node =
+        listNodeValue =
           "," + uniq(tagsArray.join(",").split(",")).join(",") + ","
+      } else {
+        listNodeValue = ""
+      }
+      if (node.dataset.utags_list_node !== listNodeValue) {
+        node.dataset.utags_list_node = listNodeValue
       }
     }
+    updateTagPositionForAllTaggedTargets()
+    postProcess()
     if (DEBUG) {
       console.debug("end of displayTags")
     }
@@ -11765,9 +11855,16 @@
           element.style.marginRight = newMargin + "px"
         }
       }
+    } else {
+      const previousElementSibling = utagsUl.previousElementSibling
+      const targetElement = getUtagsTargetElementByElement(element)
+      if (previousElementSibling !== targetElement) {
+        appendUtagsToElement(element, utagsUl)
+        ensureUtagsUlTracked(utagsUl)
+      }
     }
     if (!utagsUl.isConnected) {
-      element.after(utagsUl)
+      appendUtagsToElement(element, utagsUl)
       ensureUtagsUlTracked(utagsUl)
     }
     if (
@@ -11781,7 +11878,12 @@
     if (style.position !== "absolute") {
       return
     }
-    if (element.dataset.utags_position_selector) {
+    if (element.dataset.utags_target_selector) {
+      element =
+        $(element.dataset.utags_target_selector, element) ||
+        element.closest(element.dataset.utags_target_selector) ||
+        element
+    } else if (element.dataset.utags_position_selector) {
       element =
         $(element.dataset.utags_position_selector, element) ||
         element.closest(element.dataset.utags_position_selector) ||
@@ -11972,12 +12074,72 @@
     }
     element.dataset.utags_fit_content = "0"
   }
+  var tagPositionUpdateQueue = []
+  var tagPositionUpdateSet = /* @__PURE__ */ new Set()
+  var isProcessingTagPositionQueue = false
+  function takeTagPositionTargetFromQueue() {
+    const target = tagPositionUpdateQueue.shift()
+    if (target) {
+      tagPositionUpdateSet.delete(target)
+    }
+    return target
+  }
+  function hasTagPositionTargetsInQueue() {
+    return tagPositionUpdateQueue.length > 0
+  }
+  function processTagPositionUpdatesIdle(deadline) {
+    while (
+      deadline.timeRemaining() > 1 &&
+      !doc.hidden &&
+      hasTagPositionTargetsInQueue()
+    ) {
+      const target = takeTagPositionTargetFromQueue()
+      if (!target) {
+        break
+      }
+      if (!target.isConnected) {
+        continue
+      }
+      updateTagPosition(target)
+    }
+    if (hasTagPositionTargetsInQueue()) {
+      requestIdleCallback(processTagPositionUpdatesIdle)
+      return
+    }
+    isProcessingTagPositionQueue = false
+  }
+  function scheduleTagPositionUpdates() {
+    if (isProcessingTagPositionQueue || !hasTagPositionTargetsInQueue()) {
+      return
+    }
+    isProcessingTagPositionQueue = true
+    requestIdleCallback(processTagPositionUpdatesIdle)
+  }
+  function enqueueTagPositionUpdate(target) {
+    if (tagPositionUpdateSet.has(target)) {
+      return
+    }
+    tagPositionUpdateSet.add(target)
+    tagPositionUpdateQueue.push(target)
+    scheduleTagPositionUpdates()
+  }
   function updateTagPositionForAllTargets() {
     if (lastScannerResult.length === 0) {
       return
     }
     for (const target of lastScannerResult) {
-      updateTagPosition(target)
+      enqueueTagPositionUpdate(target)
+    }
+  }
+  function updateTagPositionForAllTaggedTargets() {
+    if (lastScannerResult.length === 0) {
+      return
+    }
+    for (const target of lastScannerResult) {
+      if (!target.dataset.utags) {
+        continue
+      }
+      enqueueTagPositionUpdate(target)
     }
   }
   function checkVimiumHint() {
@@ -12172,6 +12334,7 @@
         enqueueScannedNode(node)
       },
       onScanCompleted(nodes) {
+        console.debug("Scan completed", nodes.length)
         lastScannerResult = nodes
       },
     })

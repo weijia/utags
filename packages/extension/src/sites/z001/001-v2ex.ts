@@ -23,17 +23,16 @@ export default (() => {
 
     // TODO: /member/XXX 转为小写。但会影响已添加到的数据。需要做一个 migration
 
-    if (url.includes('v2ex.com')) {
-      return url
-        .replace(/[?#].*/, '')
-        .replace(/(\w+\.)?v2ex.com/, 'www.v2ex.com')
-    }
+    if (url.includes('v2ex.com') || url.includes('v2ex.co')) {
+      url = url.replace(/(\w+\.)?v2ex.com?/, 'www.v2ex.com')
 
-    // https://global.v2ex.co/
-    if (url.includes('v2ex.co')) {
+      if (/\/t\/\d+\?p=\d+#r_\d+/.test(url)) {
+        // keep '?p=1#r_123'
+      } else {
+        url = url.replace(/[?#].*/, '')
+      }
+
       return url
-        .replace(/[?#].*/, '')
-        .replace(/(\w+\.)?v2ex.co/, 'www.v2ex.com')
     }
 
     return url
@@ -67,7 +66,8 @@ export default (() => {
 
       if (location.pathname.includes('/t/')) {
         // 帖子详细页
-        const header = $('.header h1')
+        // .post-detail .header h1 - v2ex-next extension
+        const header = $('.post-detail .header h1') || $('.header h1')
         if (header) {
           const key = getCanonicalUrl(
             'https://www.v2ex.com' + location.pathname
@@ -176,6 +176,8 @@ export default (() => {
       '.box .cell',
       // v2ex 超级增强
       '.my-box .comment',
+      // v2ex polish 热门回复
+      '.v2p-modal-comments .cell',
     ],
     conditionNodesSelectors: [
       // 帖子标题
@@ -194,6 +196,8 @@ export default (() => {
       '.planet-site-address a',
       // 回复者
       '.box .cell strong a.dark[href*="/member/"]',
+      // 回复者 (v2ex polish)
+      '.box .cell[id^="r_"] strong > a[href*="/member/"]',
       // 回复内容标签
       '.box .cell .ago a',
       // 回复内容标签(手机网页版)
@@ -202,6 +206,8 @@ export default (() => {
       '.comment .username',
       // 回复内容标签 (v2ex 超级增强)
       '.comment .ago',
+      // v2ex polish 热门回复
+      '.v2p-modal-comments .cell strong > a[href*="/member/"]',
     ],
     matchedNodesSelectors: [
       // 所有页面帖子链接
@@ -219,6 +225,19 @@ export default (() => {
       '.box .cell .fr .tag',
       '.box .inner .tag',
     ],
+    validate(element: HTMLAnchorElement, href: string) {
+      // 帖子作者
+      if (
+        element.matches(
+          '.box .cell .topic_info strong:first-of-type a[href*="/member/"]'
+        )
+      ) {
+        element.dataset.utags_target_selector =
+          '.box .cell .topic_info strong:first-of-type'
+      }
+
+      return true
+    },
     excludeSelectors: [
       ...defaultSite.excludeSelectors,
       // 导航栏
@@ -241,6 +260,9 @@ export default (() => {
       '#Rightbar .ago',
       // V2REP > 引用回复
       '.cited_reply .ago',
+      // V2EX Polish > 热门回复
+      '.v2p-modal-main .ago',
+      '.button',
     ],
     getStyle: () => styleText,
     getCanonicalUrl,

@@ -1,5 +1,17 @@
 # RELEASE NOTES
 
+## v0.34
+
+- Optimize execute `preProcess` and `postProcess` logic to ensure they are called when DOM changes.
+- Clarify the `utagsUl` repositioning behavior to keep it immediately after the target element when the DOM changes.
+- Add support for tagging 2libra.com comment replies, making it easier to bookmark valuable responses.
+
+## v0.33
+
+- Optimize list node tag aggregation by avoiding redundant `data-utags_list_node` updates.
+- Introduce `data-utags_target_selector` to customize where UTags UI is inserted for complex layouts (e.g. V2EX).
+- Reduce jank on large pages by batching and deduplicating tag position updates, then processing them in `requestIdleCallback`.
+
 ## v0.32
 
 - Add a scan watchdog to detect suspected infinite scan loops and stop scanning safely.
@@ -7,6 +19,7 @@
 - Trigger a fallback cleanup pass when target removals are detected to keep results accurate.
 - Defer scanned-node queue processing while the scanner is busy to prioritize scanning in idle time.
 - Improve scan target filtering by excluding nodes under non-scannable ancestor tags.
+- Exclude nested links (`a a`) from scanning to avoid unexpected matches on pages modified by extensions (e.g. V2EX Polish).
 
 ## v0.31
 
