@@ -150,31 +150,76 @@ export class WebDAVSyncAdapter implements SyncAdapter<
             console.log('WebDAV download: Updating local sync settings')
             try {
               const { syncConfigStore, get } = await import('../stores/sync-config-store.js')
+              console.log('WebDAV download: Step 1 - Imported syncConfigStore and get')
+              
               const syncSettings = JSON.parse(syncSettingsContents)
+              console.log('WebDAV download: Step 2 - Parsed remote syncSettings, services:', (syncSettings.syncServices || []).length)
               
               // Get current local sync settings to preserve browserExtension services
               const localSyncSettings = get(syncConfigStore)
+              console.log('WebDAV download: Step 3 - Got local syncSettings, services:', (localSyncSettings.syncServices || []).length)
               
-              // Preserve local browserExtension services that won't be synced from remote
-              const remoteServiceIds = new Set((syncSettings.syncServices || []).map(s => s.id))
-              const localBrowserExtensionServices = (localSyncSettings.syncServices || []).filter(
-                service => service.type === 'browserExtension'
+              console.log('WebDAV download: === DEBUG INFO ===')
+              console.log('WebDAV download: Remote syncSettings content:', JSON.stringify(syncSettings, null, 2))
+              console.log('WebDAV download: Local syncSettings content:', JSON.stringify(localSyncSettings, null, 2))
+              console.log('WebDAV download: Remote services count:', (syncSettings.syncServices || []).length)
+              console.log('WebDAV download: Local services count:', (localSyncSettings.syncServices || []).length)
+              console.log('WebDAV download: Remote services types:', (syncSettings.syncServices || []).map((s: any) => s?.type))
+              console.log('WebDAV download: Local services types:', (localSyncSettings.syncServices || []).map((s: any) => s?.type))
+              console.log('WebDAV download: ======================')
+              
+              // Filter out invalid services from remote
+              const validRemoteServices = (syncSettings.syncServices || []).filter(
+                (s: any) => {
+                  const isValid = s && typeof s === 'object' && typeof s.id === 'string' && typeof s.type === 'string'
+                  console.log(`WebDAV download: Filtering remote service id=${s?.id}, type=${s?.type}, isValid=${isValid}`)
+                  return isValid
+                }
               )
+              console.log('WebDAV download: Step 4 - Filtered validRemoteServices, count:', validRemoteServices.length)
               
-              // Merge: use remote services + local browserExtension services
+              // If remote has no valid services, preserve all local services
+              if (validRemoteServices.length === 0) {
+                console.log('WebDAV download: Step 5a - Remote has no valid services, preserving local settings')
+                return
+              }
+              console.log('WebDAV download: Step 5b - Remote has valid services, proceeding with merge')
+              
+              // Get IDs of valid remote services
+              const remoteServiceIds = new Set(validRemoteServices.map((s: any) => s.id))
+              console.log('WebDAV download: Step 6 - Created remoteServiceIds set:', Array.from(remoteServiceIds))
+              
+              // Preserve local browserExtension services that are valid and not in remote
+              const localBrowserExtensionServices = (localSyncSettings.syncServices || []).filter(
+                (s: any) => {
+                  const isBrowserExtension = s && typeof s === 'object' && s.type === 'browserExtension'
+                  const notInRemote = !remoteServiceIds.has(s.id)
+                  const shouldPreserve = isBrowserExtension && notInRemote
+                  console.log(`WebDAV download: Filtering local service id=${s?.id}, type=${s?.type}, isBrowserExtension=${isBrowserExtension}, notInRemote=${notInRemote}, shouldPreserve=${shouldPreserve}`)
+                  return shouldPreserve
+                }
+              )
+              console.log('WebDAV download: Step 7 - Filtered localBrowserExtensionServices, count:', localBrowserExtensionServices.length)
+              
+              // Merge: valid remote services + local browserExtension services not in remote
               const mergedSyncServices = [
-                ...(syncSettings.syncServices || []),
+                ...validRemoteServices,
                 ...localBrowserExtensionServices
               ]
+              console.log('WebDAV download: Step 8 - Merged services, total count:', mergedSyncServices.length)
               
               const mergedSyncSettings = {
                 ...syncSettings,
                 syncServices: mergedSyncServices
               }
+              console.log('WebDAV download: Step 9 - Created mergedSyncSettings object')
               
-              console.log(`WebDAV download: Merged sync settings - Remote services: ${syncSettings.syncServices?.length || 0}, Local browserExtension services preserved: ${localBrowserExtensionServices.length}`)
+              console.log(`WebDAV download: Final summary - Valid remote services: ${validRemoteServices.length}, Local browserExtension services preserved: ${localBrowserExtensionServices.length}, Total merged: ${mergedSyncServices.length}`)
+              console.log('WebDAV download: Merged services types:', mergedSyncServices.map((s: any) => s?.type))
+              console.log('WebDAV download: Merged syncSettings content:', JSON.stringify(mergedSyncSettings, null, 2))
               
               syncConfigStore.set(mergedSyncSettings)
+              console.log('WebDAV download: Step 10 - Called syncConfigStore.set()')
               console.log('WebDAV download: Sync settings updated successfully')
             } catch (parseError) {
               console.error('WebDAV download: Failed to parse sync settings:', parseError)
