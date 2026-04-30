@@ -4,8 +4,11 @@
     {
       "label": "Create and Push Git Tag",
       "type": "shell",
-      "command": "echo 'Enter tag name (e.g., v1.0.0):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -a \"$tag\" -m \"Release $tag\" && git push origin \"$tag\"",
-      "args": [],
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "set /p tag=\"Enter tag name (e.g., v1.0.0): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else (git tag -a %tag% -m \"Release %tag%\" && git push github %tag%)"
+      ],
       "problemMatcher": [],
       "group": {
         "kind": "build",
@@ -15,25 +18,28 @@
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Create an annotated tag and push it to GitHub (interactive)"
+      "detail": "Create an annotated tag and push it to GitHub (cmd)"
     },
     {
       "label": "Create Git Tag (Local)",
       "type": "shell",
-      "command": "echo 'Enter tag name (e.g., v1.0.0):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -a \"$tag\" -m \"Release $tag\"",
-      "args": [],
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "set /p tag=\"Enter tag name (e.g., v1.0.0): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git tag -a %tag% -m \"Release %tag%\""
+      ],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Create a local annotated tag only (interactive)"
+      "detail": "Create a local annotated tag only (cmd)"
     },
     {
       "label": "Push All Tags",
       "type": "shell",
-      "command": "git push --tags",
+      "command": "git push github --tags",
       "args": [],
       "problemMatcher": [],
       "group": "build",
@@ -59,28 +65,34 @@
     {
       "label": "Delete Local Tag",
       "type": "shell",
-      "command": "echo 'Enter tag name to delete (local):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -d \"$tag\"",
-      "args": [],
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "set /p tag=\"Enter tag name to delete (local): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git tag -d %tag%"
+      ],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Delete a local tag (interactive)"
+      "detail": "Delete a local tag (cmd)"
     },
     {
       "label": "Delete Remote Tag",
       "type": "shell",
-      "command": "echo 'Enter tag name to delete (remote):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git push origin --delete \"$tag\"",
-      "args": [],
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "set /p tag=\"Enter tag name to delete (remote): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git push github --delete %tag%"
+      ],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Delete a remote tag from GitHub (interactive)"
+      "detail": "Delete a remote tag from GitHub (cmd)"
     }
   ]
 }
