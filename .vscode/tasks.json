@@ -1,0 +1,86 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Create and Push Git Tag",
+      "type": "shell",
+      "command": "echo 'Enter tag name (e.g., v1.0.0):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -a \"$tag\" -m \"Release $tag\" && git push origin \"$tag\"",
+      "args": [],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Create an annotated tag and push it to GitHub (interactive)"
+    },
+    {
+      "label": "Create Git Tag (Local)",
+      "type": "shell",
+      "command": "echo 'Enter tag name (e.g., v1.0.0):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -a \"$tag\" -m \"Release $tag\"",
+      "args": [],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Create a local annotated tag only (interactive)"
+    },
+    {
+      "label": "Push All Tags",
+      "type": "shell",
+      "command": "git push --tags",
+      "args": [],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Push all local tags to GitHub"
+    },
+    {
+      "label": "List Recent Tags",
+      "type": "shell",
+      "command": "git tag -l --sort=-creatordate | head -20",
+      "args": [],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Show 20 most recent tags"
+    },
+    {
+      "label": "Delete Local Tag",
+      "type": "shell",
+      "command": "echo 'Enter tag name to delete (local):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git tag -d \"$tag\"",
+      "args": [],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Delete a local tag (interactive)"
+    },
+    {
+      "label": "Delete Remote Tag",
+      "type": "shell",
+      "command": "echo 'Enter tag name to delete (remote):' && read tag && if [ -z \"$tag\" ]; then echo 'Tag name cannot be empty!'; exit 1; fi && git push origin --delete \"$tag\"",
+      "args": [],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Delete a remote tag from GitHub (interactive)"
+    }
+  ]
+}
