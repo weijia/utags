@@ -375,7 +375,7 @@
                 <span>{m.SETTINGS_SIDEBAR_VERSION_LABEL()}</span>
               </div>
               <span class="text-gray-500 dark:text-gray-400"
-                >v{__APP_VERSION__}</span>
+                >{__APP_VERSION__}</span>
             </div>
             <div class="flex items-center justify-between px-1 py-1.5">
               <a

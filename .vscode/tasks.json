@@ -4,10 +4,11 @@
     {
       "label": "Create and Push Git Tag",
       "type": "shell",
-      "command": "cmd.exe",
+      "command": "powershell.exe",
       "args": [
-        "/c",
-        "set /p tag=\"Enter tag name (e.g., v1.0.0): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else (git tag -a %tag% -m \"Release %tag%\" && git push github %tag%)"
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/.vscode/create-tag-and-push.ps1"
       ],
       "problemMatcher": [],
       "group": {
@@ -18,15 +19,16 @@
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Create an annotated tag and push it to GitHub (cmd)"
+      "detail": "Create an annotated tag and push it to GitHub"
     },
     {
       "label": "Create Git Tag (Local)",
       "type": "shell",
-      "command": "cmd.exe",
+      "command": "powershell.exe",
       "args": [
-        "/c",
-        "set /p tag=\"Enter tag name (e.g., v1.0.0): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git tag -a %tag% -m \"Release %tag%\""
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/.vscode/create-tag.ps1"
       ],
       "problemMatcher": [],
       "group": "build",
@@ -34,13 +36,13 @@
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Create a local annotated tag only (cmd)"
+      "detail": "Create a local annotated tag only"
     },
     {
       "label": "Push All Tags",
       "type": "shell",
-      "command": "git push github --tags",
-      "args": [],
+      "command": "cmd.exe",
+      "args": ["/c", "git push github --tags"],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
@@ -52,8 +54,8 @@
     {
       "label": "List Recent Tags",
       "type": "shell",
-      "command": "git tag -l --sort=-creatordate | head -20",
-      "args": [],
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-Command", "git tag -l --sort=-creatordate | Select-Object -First 20"],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
@@ -66,33 +68,27 @@
       "label": "Delete Local Tag",
       "type": "shell",
       "command": "cmd.exe",
-      "args": [
-        "/c",
-        "set /p tag=\"Enter tag name to delete (local): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git tag -d %tag%"
-      ],
+      "args": ["/c", "set /p tag=\"Enter tag name to delete (local): \" && git tag -d %tag%"],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Delete a local tag (cmd)"
+      "detail": "Delete a local tag"
     },
     {
       "label": "Delete Remote Tag",
       "type": "shell",
       "command": "cmd.exe",
-      "args": [
-        "/c",
-        "set /p tag=\"Enter tag name to delete (remote): \" && if \"%tag%\"==\"\" (echo Tag name cannot be empty! && exit /b 1) else git push github --delete %tag%"
-      ],
+      "args": ["/c", "set /p tag=\"Enter tag name to delete (remote): \" && git push github --delete %tag%"],
       "problemMatcher": [],
       "group": "build",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "detail": "Delete a remote tag from GitHub (cmd)"
+      "detail": "Delete a remote tag from GitHub"
     }
   ]
 }
