@@ -149,7 +149,8 @@ export class WebDAVSyncAdapter implements SyncAdapter<
             
             console.log('WebDAV download: Updating local sync settings')
             try {
-              const { syncConfigStore, get } = await import('../stores/sync-config-store.js')
+              const { syncConfigStore } = await import('../stores/sync-config-store.js')
+              const { get } = await import('svelte/store')
               console.log('WebDAV download: Step 1 - Imported syncConfigStore and get')
               
               const syncSettings = JSON.parse(syncSettingsContents)
