@@ -156,7 +156,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               const syncSettings = JSON.parse(syncSettingsContents)
               console.log('WebDAV download: Step 2 - Parsed remote syncSettings, services:', (syncSettings.syncServices || []).length)
               
-              // Get current local sync settings to preserve browserExtension services
+              // Get current local sync settings to preserve browserExtension and dataDirectory services
               const localSyncSettings = get(syncConfigStore)
               console.log('WebDAV download: Step 3 - Got local syncSettings, services:', (localSyncSettings.syncServices || []).length)
               
@@ -190,22 +190,22 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               const remoteServiceIds = new Set(validRemoteServices.map((s: any) => s.id))
               console.log('WebDAV download: Step 6 - Created remoteServiceIds set:', Array.from(remoteServiceIds))
               
-              // Preserve local browserExtension services that are valid and not in remote
-              const localBrowserExtensionServices = (localSyncSettings.syncServices || []).filter(
+              // Preserve local browserExtension and dataDirectory services that are valid and not in remote
+              const localPreservedServices = (localSyncSettings.syncServices || []).filter(
                 (s: any) => {
-                  const isBrowserExtension = s && typeof s === 'object' && s.type === 'browserExtension'
+                  const isPreservedType = s && typeof s === 'object' && (s.type === 'browserExtension' || s.type === 'dataDirectory')
                   const notInRemote = !remoteServiceIds.has(s.id)
-                  const shouldPreserve = isBrowserExtension && notInRemote
-                  console.log(`WebDAV download: Filtering local service id=${s?.id}, type=${s?.type}, isBrowserExtension=${isBrowserExtension}, notInRemote=${notInRemote}, shouldPreserve=${shouldPreserve}`)
+                  const shouldPreserve = isPreservedType && notInRemote
+                  console.log(`WebDAV download: Filtering local service id=${s?.id}, type=${s?.type}, isPreservedType=${isPreservedType}, notInRemote=${notInRemote}, shouldPreserve=${shouldPreserve}`)
                   return shouldPreserve
                 }
               )
-              console.log('WebDAV download: Step 7 - Filtered localBrowserExtensionServices, count:', localBrowserExtensionServices.length)
+              console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + dataDirectory), count:', localPreservedServices.length)
               
-              // Merge: valid remote services + local browserExtension services not in remote
+              // Merge: valid remote services + local preserved services not in remote
               const mergedSyncServices = [
                 ...validRemoteServices,
-                ...localBrowserExtensionServices
+                ...localPreservedServices
               ]
               console.log('WebDAV download: Step 8 - Merged services, total count:', mergedSyncServices.length)
               
@@ -215,7 +215,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               }
               console.log('WebDAV download: Step 9 - Created mergedSyncSettings object')
               
-              console.log(`WebDAV download: Final summary - Valid remote services: ${validRemoteServices.length}, Local browserExtension services preserved: ${localBrowserExtensionServices.length}, Total merged: ${mergedSyncServices.length}`)
+              console.log(`WebDAV download: Final summary - Valid remote services: ${validRemoteServices.length}, Local preserved services: ${localPreservedServices.length}, Total merged: ${mergedSyncServices.length}`)
               console.log('WebDAV download: Merged services types:', mergedSyncServices.map((s: any) => s?.type))
               console.log('WebDAV download: Merged syncSettings content:', JSON.stringify(mergedSyncSettings, null, 2))
               
