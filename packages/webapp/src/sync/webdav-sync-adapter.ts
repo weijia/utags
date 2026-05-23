@@ -390,12 +390,13 @@ export class WebDAVSyncAdapter implements SyncAdapter<
         }
         
         // Filter out dynamic sync state information, only keep user configuration
-        // Also filter out browserExtension type services as they contain browser-specific information
+        // Filter out browserExtension type services as they contain browser-specific information
+        // Filter out dataDirectory type services to avoid duplicates when syncing
         const filteredSyncSettings = {
           syncServices: (syncSettings.syncServices || []).map(service => {
             // Only keep user-configured fields, exclude sync state fields
-            const { 
-              id, name, type, credentials, target, scope, enabled, 
+            const {
+              id, name, type, credentials, target, scope, enabled,
               autoSyncEnabled, autoSyncInterval, autoSyncOnChanges, autoSyncDelayOnChanges,
               mergeStrategy
             } = service;
@@ -404,7 +405,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               autoSyncEnabled, autoSyncInterval, autoSyncOnChanges, autoSyncDelayOnChanges,
               mergeStrategy
             };
-          }).filter(service => service.type !== 'browserExtension'),
+          }).filter(service => service.type !== 'browserExtension' && service.type !== 'dataDirectory'),
           activeSyncServiceId: syncSettings.activeSyncServiceId
         };
         
