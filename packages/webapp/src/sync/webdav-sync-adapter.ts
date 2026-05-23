@@ -178,20 +178,33 @@ export class WebDAVSyncAdapter implements SyncAdapter<
                 }
               )
               console.log('WebDAV download: Step 4 - Filtered validRemoteServices, count:', validRemoteServices.length)
-              
+
+              // Deduplicate remote services by type (keep first occurrence of each type)
+              // This handles cases where remote sync-settings.json already contains duplicates
+              const seenRemoteTypes = new Set<string>()
+              const deduplicatedRemoteServices = validRemoteServices.filter((s: any) => {
+                if (seenRemoteTypes.has(s.type)) {
+                  console.log(`WebDAV download: Deduplicating remote service id=${s.id}, type=${s.type} (already seen)`)
+                  return false
+                }
+                seenRemoteTypes.add(s.type)
+                return true
+              })
+              console.log('WebDAV download: Step 4b - Deduplicated remote services, count:', deduplicatedRemoteServices.length)
+
               // If remote has no valid services, preserve all local services
-              if (validRemoteServices.length === 0) {
+              if (deduplicatedRemoteServices.length === 0) {
                 console.log('WebDAV download: Step 5a - Remote has no valid services, preserving local settings')
                 return
               }
               console.log('WebDAV download: Step 5b - Remote has valid services, proceeding with merge')
               
-              // Get IDs of valid remote services
-              const remoteServiceIds = new Set(validRemoteServices.map((s: any) => s.id))
+              // Get IDs of deduplicated remote services
+              const remoteServiceIds = new Set(deduplicatedRemoteServices.map((s: any) => s.id))
               console.log('WebDAV download: Step 6 - Created remoteServiceIds set:', Array.from(remoteServiceIds))
 
               // Check if remote has dataDirectory type service
-              const remoteHasDataDirectory = validRemoteServices.some((s: any) => s.type === 'dataDirectory')
+              const remoteHasDataDirectory = deduplicatedRemoteServices.some((s: any) => s.type === 'dataDirectory')
               console.log('WebDAV download: Step 6b - Remote has dataDirectory service:', remoteHasDataDirectory)
 
               // Preserve local browserExtension services that are valid and not in remote
@@ -219,9 +232,9 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               )
               console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + dataDirectory), count:', localPreservedServices.length)
               
-              // Merge: valid remote services + local preserved services not in remote
+              // Merge: deduplicated remote services + local preserved services not in remote
               const mergedSyncServices = [
-                ...validRemoteServices,
+                ...deduplicatedRemoteServices,
                 ...localPreservedServices
               ]
               console.log('WebDAV download: Step 8 - Merged services, total count:', mergedSyncServices.length)
