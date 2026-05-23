@@ -189,15 +189,32 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               // Get IDs of valid remote services
               const remoteServiceIds = new Set(validRemoteServices.map((s: any) => s.id))
               console.log('WebDAV download: Step 6 - Created remoteServiceIds set:', Array.from(remoteServiceIds))
-              
-              // Preserve local browserExtension and dataDirectory services that are valid and not in remote
+
+              // Check if remote has dataDirectory type service
+              const remoteHasDataDirectory = validRemoteServices.some((s: any) => s.type === 'dataDirectory')
+              console.log('WebDAV download: Step 6b - Remote has dataDirectory service:', remoteHasDataDirectory)
+
+              // Preserve local browserExtension services that are valid and not in remote
+              // For dataDirectory: only preserve if remote doesn't have one (to avoid duplicates)
               const localPreservedServices = (localSyncSettings.syncServices || []).filter(
                 (s: any) => {
-                  const isPreservedType = s && typeof s === 'object' && (s.type === 'browserExtension' || s.type === 'dataDirectory')
+                  const isBrowserExtension = s && typeof s === 'object' && s.type === 'browserExtension'
+                  const isDataDirectory = s && typeof s === 'object' && s.type === 'dataDirectory'
                   const notInRemote = !remoteServiceIds.has(s.id)
-                  const shouldPreserve = isPreservedType && notInRemote
-                  console.log(`WebDAV download: Filtering local service id=${s?.id}, type=${s?.type}, isPreservedType=${isPreservedType}, notInRemote=${notInRemote}, shouldPreserve=${shouldPreserve}`)
-                  return shouldPreserve
+
+                  // browserExtension: always preserve if not in remote (browser-specific)
+                  if (isBrowserExtension && notInRemote) {
+                    console.log(`WebDAV download: Preserving local browserExtension service id=${s?.id}`)
+                    return true
+                  }
+
+                  // dataDirectory: only preserve if remote doesn't have one (avoid duplicates)
+                  if (isDataDirectory && notInRemote && !remoteHasDataDirectory) {
+                    console.log(`WebDAV download: Preserving local dataDirectory service id=${s?.id} (no remote dataDirectory)`)
+                    return true
+                  }
+
+                  return false
                 }
               )
               console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + dataDirectory), count:', localPreservedServices.length)
