@@ -104,7 +104,9 @@ export class GitHubSyncAdapter implements SyncAdapter<
     }
 
     const filePath = this.getFilePath()
-    const url = `${GITHUB_API_BASE_URL}/repos/${this.target.repo}/contents/${filePath}${this.target.branch ? `?ref=${this.target.branch}` : ''}`
+    // Remove .git suffix if present, as GitHub API doesn't accept it
+    const repo = this.target.repo.replace(/\.git$/, '')
+    const url = `${GITHUB_API_BASE_URL}/repos/${repo}/contents/${filePath}${this.target.branch ? `?ref=${this.target.branch}` : ''}`
 
     try {
       const response = await fetch(url, {
@@ -255,7 +257,9 @@ export class GitHubSyncAdapter implements SyncAdapter<
     }
 
     const filePath = this.getFilePath()
-    const url = `${GITHUB_API_BASE_URL}/repos/${this.target.repo}/contents/${filePath}`
+    // Remove .git suffix if present, as GitHub API doesn't accept it
+    const repo = this.target.repo.replace(/\.git$/, '')
+    const url = `${GITHUB_API_BASE_URL}/repos/${repo}/contents/${filePath}`
 
     // Encode content to base64. GitHub API requires content to be base64 encoded.
     // Standard UTF-8 to Base64 encoding
