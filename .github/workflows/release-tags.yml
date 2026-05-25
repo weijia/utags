@@ -1,0 +1,105 @@
+name: "Manage Release Tags"
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'update-latest'
+        type: choice
+        options:
+          - update-latest
+          - sync-release-latest
+      target_tag:
+        description: 'Target tag for latest (optional)'
+        required: false
+        type: string
+
+jobs:
+  manage-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get tag name
+        id: get_tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG"
+
+      - name: Update latest tag
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'update-latest')
+        run: |
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          
+          # Check if this is a stable release (not alpha/beta/rc)
+          IS_STABLE=true
+          if [[ "$TAG" =~ (alpha|beta|rc) ]]; then
+            IS_STABLE=false
+            echo "This is a pre-release version, skipping latest update"
+          fi
+          
+          if [ "$IS_STABLE" = "true" ]; then
+            echo "Updating latest tag to $TAG"
+            
+            # Fetch all tags
+            git fetch --tags
+            
+            # Update or create the latest tag
+            git tag -d latest 2>/dev/null || true
+            git push origin :refs/tags/latest 2>/dev/null || true
+            git tag latest "$TAG"
+            git push origin latest --force
+            
+            echo "Latest tag updated to $TAG"
+          fi
+
+      - name: Sync release tag with latest
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'sync-release-latest'
+        run: |
+          # Get the target tag (from input or latest)
+          if [ -n "${{ github.event.inputs.target_tag }}" ]; then
+            TAG="${{ github.event.inputs.target_tag }}"
+          else
+            TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$TAG" ]; then
+            echo "No tag found to sync"
+            exit 1
+          fi
+          
+          echo "Syncing release tags for $TAG"
+          
+          # Update release tag (points to the same commit as the version tag)
+          git tag -d release 2>/dev/null || true
+          git push origin :refs/tags/release 2>/dev/null || true
+          git tag release "$TAG"
+          git push origin release --force
+          
+          # Also update latest for stable releases
+          if ! [[ "$TAG" =~ (alpha|beta|rc) ]]; then
+            git tag -d latest 2>/dev/null || true
+            git push origin :refs/tags/latest 2>/dev/null || true
+            git tag latest "$TAG"
+            git push origin latest --force
+            echo "Both release and latest tags updated to $TAG"
+          else
+            echo "Release tag updated to $TAG (pre-release, not updating latest)"
+          fi
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          generate_release_notes: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
