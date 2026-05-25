@@ -207,17 +207,24 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               const remoteHasDataDirectory = deduplicatedRemoteServices.some((s: any) => s.type === 'dataDirectory')
               console.log('WebDAV download: Step 6b - Remote has dataDirectory service:', remoteHasDataDirectory)
 
-              // Preserve local browserExtension services that are valid and not in remote
+              // Preserve local browserExtension and github services that are valid and not in remote
               // For dataDirectory: only preserve if remote doesn't have one (to avoid duplicates)
               const localPreservedServices = (localSyncSettings.syncServices || []).filter(
                 (s: any) => {
                   const isBrowserExtension = s && typeof s === 'object' && s.type === 'browserExtension'
+                  const isGitHub = s && typeof s === 'object' && s.type === 'github'
                   const isDataDirectory = s && typeof s === 'object' && s.type === 'dataDirectory'
                   const notInRemote = !remoteServiceIds.has(s.id)
 
                   // browserExtension: always preserve if not in remote (browser-specific)
                   if (isBrowserExtension && notInRemote) {
                     console.log(`WebDAV download: Preserving local browserExtension service id=${s?.id}`)
+                    return true
+                  }
+
+                  // github: always preserve if not in remote (contains credentials, device-specific)
+                  if (isGitHub && notInRemote) {
+                    console.log(`WebDAV download: Preserving local github service id=${s?.id}`)
                     return true
                   }
 
@@ -230,7 +237,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
                   return false
                 }
               )
-              console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + dataDirectory), count:', localPreservedServices.length)
+              console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + github + dataDirectory), count:', localPreservedServices.length)
               
               // Merge: deduplicated remote services + local preserved services not in remote
               const mergedSyncServices = [
@@ -418,7 +425,7 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               autoSyncEnabled, autoSyncInterval, autoSyncOnChanges, autoSyncDelayOnChanges,
               mergeStrategy
             };
-          }).filter(service => service.type !== 'browserExtension' && service.type !== 'dataDirectory'),
+          }).filter(service => service.type !== 'browserExtension' && service.type !== 'dataDirectory' && service.type !== 'github'),
           activeSyncServiceId: syncSettings.activeSyncServiceId
         };
         
