@@ -179,15 +179,34 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               )
               console.log('WebDAV download: Step 4 - Filtered validRemoteServices, count:', validRemoteServices.length)
 
-              // Deduplicate remote services by type (keep first occurrence of each type)
+              // Deduplicate remote services by type + target identifier (keep first occurrence)
               // This handles cases where remote sync-settings.json already contains duplicates
-              const seenRemoteTypes = new Set<string>()
+              // For webdav: target.url, for github: target.repo, for dataDirectory: target.path
+              const seenRemoteKeys = new Set<string>()
+              const getServiceKey = (s: any): string => {
+                if (!s.target) return `${s.type}:no-target`
+                if (s.type === 'github' && s.target.repo) {
+                  return `github:${s.target.repo}`
+                }
+                if (s.type === 'webdav' && s.target.url) {
+                  return `webdav:${s.target.url}`
+                }
+                if (s.type === 'dataDirectory' && s.target.path) {
+                  return `dataDirectory:${s.target.path}`
+                }
+                if (s.type === 'customApi' && s.target.url) {
+                  return `customApi:${s.target.url}`
+                }
+                return `${s.type}:${s.id}`
+              }
+              
               const deduplicatedRemoteServices = validRemoteServices.filter((s: any) => {
-                if (seenRemoteTypes.has(s.type)) {
-                  console.log(`WebDAV download: Deduplicating remote service id=${s.id}, type=${s.type} (already seen)`)
+                const key = getServiceKey(s)
+                if (seenRemoteKeys.has(key)) {
+                  console.log(`WebDAV download: Deduplicating remote service id=${s.id}, type=${s.type}, key=${key} (already seen)`)
                   return false
                 }
-                seenRemoteTypes.add(s.type)
+                seenRemoteKeys.add(key)
                 return true
               })
               console.log('WebDAV download: Step 4b - Deduplicated remote services, count:', deduplicatedRemoteServices.length)
@@ -203,41 +222,59 @@ export class WebDAVSyncAdapter implements SyncAdapter<
               const remoteServiceIds = new Set(deduplicatedRemoteServices.map((s: any) => s.id))
               console.log('WebDAV download: Step 6 - Created remoteServiceIds set:', Array.from(remoteServiceIds))
 
-              // Check if remote has dataDirectory type service
-              const remoteHasDataDirectory = deduplicatedRemoteServices.some((s: any) => s.type === 'dataDirectory')
-              console.log('WebDAV download: Step 6b - Remote has dataDirectory service:', remoteHasDataDirectory)
+              // Build a set of remote service keys for comparison
+              const remoteServiceKeys = new Set(deduplicatedRemoteServices.map(getServiceKey))
+              console.log('WebDAV download: Step 6b - Remote service keys:', Array.from(remoteServiceKeys))
 
-              // Preserve local browserExtension and github services that are valid and not in remote
-              // For dataDirectory: only preserve if remote doesn't have one (to avoid duplicates)
+              // Preserve local services that should not be overwritten by remote
+              // browserExtension: always preserve (browser-specific)
+              // github: always preserve if not pointing to same repo (contains credentials, device-specific)
+              // dataDirectory: preserve if not pointing to same path (avoid duplicates)
+              // webdav/customApi: preserve if not pointing to same URL (avoid duplicates)
               const localPreservedServices = (localSyncSettings.syncServices || []).filter(
                 (s: any) => {
+                  const localKey = getServiceKey(s)
                   const isBrowserExtension = s && typeof s === 'object' && s.type === 'browserExtension'
                   const isGitHub = s && typeof s === 'object' && s.type === 'github'
                   const isDataDirectory = s && typeof s === 'object' && s.type === 'dataDirectory'
-                  const notInRemote = !remoteServiceIds.has(s.id)
+                  const isWebDAV = s && typeof s === 'object' && s.type === 'webdav'
+                  const isCustomApi = s && typeof s === 'object' && s.type === 'customApi'
+                  const hasSameTargetInRemote = remoteServiceKeys.has(localKey)
 
-                  // browserExtension: always preserve if not in remote (browser-specific)
-                  if (isBrowserExtension && notInRemote) {
+                  // browserExtension: always preserve (browser-specific, never synced)
+                  if (isBrowserExtension) {
                     console.log(`WebDAV download: Preserving local browserExtension service id=${s?.id}`)
                     return true
                   }
 
-                  // github: always preserve if not in remote (contains credentials, device-specific)
-                  if (isGitHub && notInRemote) {
-                    console.log(`WebDAV download: Preserving local github service id=${s?.id}`)
+                  // github: preserve if not pointing to same repo in remote
+                  if (isGitHub && !hasSameTargetInRemote) {
+                    console.log(`WebDAV download: Preserving local github service id=${s?.id}, key=${localKey} (different repo)`)
                     return true
                   }
 
-                  // dataDirectory: only preserve if remote doesn't have one (avoid duplicates)
-                  if (isDataDirectory && notInRemote && !remoteHasDataDirectory) {
-                    console.log(`WebDAV download: Preserving local dataDirectory service id=${s?.id} (no remote dataDirectory)`)
+                  // dataDirectory: preserve if not pointing to same path in remote
+                  if (isDataDirectory && !hasSameTargetInRemote) {
+                    console.log(`WebDAV download: Preserving local dataDirectory service id=${s?.id}, key=${localKey} (different path)`)
+                    return true
+                  }
+
+                  // webdav: preserve if not pointing to same URL in remote
+                  if (isWebDAV && !hasSameTargetInRemote) {
+                    console.log(`WebDAV download: Preserving local webdav service id=${s?.id}, key=${localKey} (different URL)`)
+                    return true
+                  }
+
+                  // customApi: preserve if not pointing to same URL in remote
+                  if (isCustomApi && !hasSameTargetInRemote) {
+                    console.log(`WebDAV download: Preserving local customApi service id=${s?.id}, key=${localKey} (different URL)`)
                     return true
                   }
 
                   return false
                 }
               )
-              console.log('WebDAV download: Step 7 - Filtered localPreservedServices (browserExtension + github + dataDirectory), count:', localPreservedServices.length)
+              console.log('WebDAV download: Step 7 - Filtered localPreservedServices, count:', localPreservedServices.length)
               
               // Merge: deduplicated remote services + local preserved services not in remote
               const mergedSyncServices = [
