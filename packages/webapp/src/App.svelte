@@ -51,6 +51,7 @@
   import BatchTagRemoveModal from './components/BatchTagRemoveModal.svelte'
   import ConfirmModal from './components/ConfirmModal.svelte'
   import { confirmState, resolveConfirm } from './stores/confirm-store.js'
+  import VersionSwitch from './components/VersionSwitch.svelte'
 
   import Toolbar from './components/Toolbar.svelte'
   import { settings, bookmarks, exportData } from './stores/stores.js'
@@ -717,6 +718,7 @@
         cancelText={$confirmState.cancelText ?? m.MODAL_CANCEL_BUTTON()}
         onConfirm={() => resolveConfirm(true)}
         onClose={() => resolveConfirm(false)} />
+      <VersionSwitch />
     </div>
   </div>
 </main>
